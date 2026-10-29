@@ -1,18 +1,21 @@
 package com.infotech.lang.application.security;
 
 import com.infotech.lang.application.views.LoginView;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
 import org.springframework.security.web.session.HttpSessionEventPublisher;
 
 import com.vaadin.flow.spring.security.VaadinWebSecurity;
 
 /**
- * Security configuration supporting both OAuth2 (Google) and form-based authentication.
+ * Security configuration: form-based (email and password) authentication, plus OAuth2 (Google)
+ * only when a client registration is supplied by the environment.
  */
 @EnableWebSecurity
 @Configuration
@@ -21,13 +24,16 @@ public class SecurityConfig extends VaadinWebSecurity {
   private final OAuth2LoginSuccessHandler oAuth2LoginSuccessHandler;
   private final FormLoginSuccessHandler formLoginSuccessHandler;
   private final CustomUserDetailsService userDetailsService;
+  private final ObjectProvider<ClientRegistrationRepository> clientRegistrations;
 
   public SecurityConfig(OAuth2LoginSuccessHandler oAuth2LoginSuccessHandler,
                        FormLoginSuccessHandler formLoginSuccessHandler,
-                       CustomUserDetailsService userDetailsService) {
+                       CustomUserDetailsService userDetailsService,
+                       ObjectProvider<ClientRegistrationRepository> clientRegistrations) {
     this.oAuth2LoginSuccessHandler = oAuth2LoginSuccessHandler;
     this.formLoginSuccessHandler = formLoginSuccessHandler;
     this.userDetailsService = userDetailsService;
+    this.clientRegistrations = clientRegistrations;
   }
 
   /**
@@ -52,10 +58,12 @@ public class SecurityConfig extends VaadinWebSecurity {
 
   @Override
   protected void configure(HttpSecurity http) throws Exception {
-    // Configure OAuth2 login before calling super
-    http.oauth2Login(oauth2 -> oauth2
-        .loginPage(LOGIN_URL)
-        .successHandler(oAuth2LoginSuccessHandler));
+    // Configure OAuth2 login before calling super, but only when a provider is configured
+    if (clientRegistrations.getIfAvailable() != null) {
+      http.oauth2Login(oauth2 -> oauth2
+          .loginPage(LOGIN_URL)
+          .successHandler(oAuth2LoginSuccessHandler));
+    }
     
     // Configure authentication manager with custom UserDetailsService
     http.userDetailsService(userDetailsService);
@@ -63,7 +71,9 @@ public class SecurityConfig extends VaadinWebSecurity {
     // Allow /api/media/** to pass through Vaadin's filter chain so Spring MVC can handle it.
     // The controller itself enforces authentication via @AuthenticationPrincipal.
     http.authorizeHttpRequests(auth -> auth
-        .requestMatchers("/api/media/**").authenticated());
+        .requestMatchers("/api/media/**").authenticated()
+        // Kubernetes liveness and readiness probes
+        .requestMatchers("/actuator/health/**").permitAll());
     
     // Call parent to set up Vaadin's default security
     super.configure(http);
