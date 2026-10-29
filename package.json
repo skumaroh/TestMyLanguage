@@ -20,7 +20,7 @@
     "proj4": "2.15.0",
     "react": "18.3.1",
     "react-dom": "18.3.1",
-    "react-router": "7.12.0"
+    "react-router": "7.18.2"
   },
   "devDependencies": {
     "@babel/preset-react": "7.28.5",
@@ -63,7 +63,7 @@
       "proj4": "2.15.0",
       "react": "18.3.1",
       "react-dom": "18.3.1",
-      "react-router": "7.12.0"
+      "react-router": "7.18.2"
     },
     "devDependencies": {
       "@babel/preset-react": "7.28.5",
