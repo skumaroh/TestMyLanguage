@@ -1,0 +1,381 @@
+/* ============================================================
+   Mobile Navigation — Bottom Tab Bar
+   (mobile-nav.css)
+   ============================================================ */
+
+/* -------------------------------------------------------
+   Bottom Tab Bar — shown on portrait mobile only
+   ------------------------------------------------------- */
+
+.bottom-nav {
+    display: none; /* hidden on desktop, shown on portrait mobile */
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+    height: 60px;
+    background: var(--lumo-base-color);
+    border-top: 1px solid var(--lumo-contrast-10pct);
+    box-shadow: 0 -2px 8px rgba(0,0,0,0.08);
+    flex-direction: row;
+    align-items: stretch;
+    padding-bottom: env(safe-area-inset-bottom, 0); /* iPhone notch */
+}
+
+/* Show on portrait mobile, push content up */
+@media (max-width: 900px) and (orientation: portrait) {
+    .bottom-nav {
+        display: flex;
+    }
+    vaadin-app-layout::part(content) {
+        padding-bottom: 64px;
+    }
+}
+
+/* Tablet portrait in game mode: hide bottom-nav too — inline hamburger
+   is the sole nav affordance, and we want the full dvh height back */
+@media (min-width: 769px) and (max-width: 900px) and (orientation: portrait) {
+    body.in-game-mode .bottom-nav {
+        display: none !important;
+    }
+    body.in-game-mode vaadin-app-layout::part(content) {
+        padding-bottom: 0 !important;
+    }
+}
+
+/* Landscape: explicitly hide and remove bottom padding */
+@media (orientation: landscape) {
+    .bottom-nav {
+        display: none !important;
+    }
+    vaadin-app-layout::part(content) {
+        padding-bottom: 0 !important;
+    }
+}
+
+.bottom-nav-tab {
+    flex: 1;
+    height: 100%;
+    background: transparent !important;
+    border: none !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    cursor: pointer;
+    padding: 0 !important;
+    transition: background 0.15s ease;
+    min-width: 0;
+}
+
+.bottom-nav-tab:hover {
+    background: var(--lumo-contrast-5pct) !important;
+}
+
+.bottom-nav-tab.active {
+    background: var(--lumo-primary-color-10pct) !important;
+    color: var(--lumo-primary-color) !important;
+}
+
+.bottom-nav-tab.active .tab-label {
+    color: var(--lumo-primary-color);
+    font-weight: 700;
+}
+
+.bottom-nav-tab.active .tab-emoji {
+    transform: scale(1.15);
+}
+
+.tab-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    height: 100%;
+    padding: 4px 0;
+}
+
+.tab-emoji {
+    font-size: 1.35rem;
+    line-height: 1;
+    display: block;
+    transition: transform 0.15s ease;
+}
+
+.tab-label {
+    font-size: 0.65rem;
+    color: var(--lumo-secondary-text-color);
+    white-space: nowrap;
+    letter-spacing: 0.01em;
+}
+
+/* -------------------------------------------------------
+   Student Header (hamburger + logo centered)
+   ------------------------------------------------------- */
+
+.student-header {
+    display: flex;
+    align-items: center;
+}
+
+.header-left,
+.header-right {
+    flex: 0 0 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.header-right {
+    justify-content: flex-end;
+}
+
+.header-center {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.app-logo {
+    font-size: 1.2rem;
+    font-weight: 800;
+    color: var(--lumo-primary-color);
+    letter-spacing: -0.02em;
+}
+
+/* -------------------------------------------------------
+   Header: game question slot (portrait — shown in navbar)
+   ------------------------------------------------------- */
+
+.header-question {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--lumo-body-text-color);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 180px;
+}
+
+.header-audio-btn {
+    min-width: 36px !important;
+    min-height: 36px !important;
+}
+
+/* Landscape: compact header — keep question/audio visible, hide only logo */
+@media (orientation: landscape) and (max-height: 600px) {
+    .app-logo {
+        display: none !important;
+    }
+
+    .header-center {
+        flex: 1 !important;
+        width: auto !important;
+        overflow: visible !important;
+    }
+
+    .header-right {
+        flex: 0 0 auto !important;
+        width: auto !important;
+        overflow: visible !important;
+    }
+
+    .header-question {
+        max-width: 60vw !important;
+        font-size: 0.85rem !important;
+    }
+
+    .header-audio-btn {
+        min-width: 30px !important;
+        min-height: 30px !important;
+    }
+
+    vaadin-app-layout::part(navbar) {
+        min-height: 40px !important;
+        height: 40px !important;
+    }
+
+    .student-header,
+    vaadin-app-layout vaadin-horizontal-layout[class*="student-header"] {
+        min-height: 40px !important;
+    }
+}
+
+/* -------------------------------------------------------
+   Game mode — remove navbar to reclaim space for content
+   ------------------------------------------------------- */
+
+/* Portrait: hide entire navbar (hamburger moves inline to question row) */
+@media (max-width: 768px) and (orientation: portrait) {
+    body.in-game-mode vaadin-app-layout::part(navbar) {
+        display: none !important;
+    }
+    body.in-game-mode vaadin-app-layout::part(content) {
+        overflow: hidden !important;
+        padding-top: 0 !important;
+    }
+}
+
+/* Tablet portrait: hide navbar too (hamburger moves inline; reclaim full height) */
+@media (min-width: 769px) and (max-width: 1024px) and (orientation: portrait) {
+    body.in-game-mode vaadin-app-layout::part(navbar) {
+        display: none !important;
+    }
+    body.in-game-mode vaadin-app-layout::part(content) {
+        overflow: hidden !important;
+        padding-top: 0 !important;
+    }
+}
+
+/* Landscape: hide navbar too (height is precious at 350–430px) */
+@media (max-width: 900px) and (orientation: landscape) {
+    body.in-game-mode vaadin-app-layout::part(navbar) {
+        display: none !important;
+    }
+    body.in-game-mode vaadin-app-layout::part(content) {
+        overflow: hidden !important;
+    }
+}
+
+/* -------------------------------------------------------
+   Drawer logout button
+   ------------------------------------------------------- */
+
+.drawer-logout-btn {
+    margin: var(--lumo-space-s) var(--lumo-space-m) !important;
+    width: calc(100% - 2 * var(--lumo-space-m)) !important;
+}
+
+/* -------------------------------------------------------
+   Profile Dialog
+   ------------------------------------------------------- */
+
+.profile-dialog-avatar {
+    width: 72px !important;
+    height: 72px !important;
+    font-size: 1.8rem !important;
+    background: var(--lumo-primary-color) !important;
+    color: var(--lumo-primary-contrast-color) !important;
+    margin-bottom: var(--lumo-space-s);
+}
+
+.profile-dialog-info {
+    padding-bottom: var(--lumo-space-s) !important;
+}
+
+.profile-signout-btn {
+    margin-top: var(--lumo-space-m) !important;
+}
+
+
+.bottom-nav-tab {
+    flex: 1;
+    height: 100%;
+    background: transparent !important;
+    border: none !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    cursor: pointer;
+    padding: 0 !important;
+    transition: background 0.15s ease;
+    min-width: 0;
+}
+
+.bottom-nav-tab:hover {
+    background: var(--lumo-contrast-5pct) !important;
+}
+
+.bottom-nav-tab.active {
+    background: var(--lumo-primary-color-10pct) !important;
+    color: var(--lumo-primary-color) !important;
+}
+
+.bottom-nav-tab.active .tab-label {
+    color: var(--lumo-primary-color);
+    font-weight: 700;
+}
+
+.bottom-nav-tab.active .tab-emoji {
+    transform: scale(1.15);
+}
+
+.tab-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    height: 100%;
+    padding: 4px 0;
+}
+
+.tab-emoji {
+    font-size: 1.35rem;
+    line-height: 1;
+    display: block;
+    transition: transform 0.15s ease;
+}
+
+.tab-label {
+    font-size: 0.65rem;
+    color: var(--lumo-secondary-text-color);
+    white-space: nowrap;
+    letter-spacing: 0.01em;
+}
+
+/* -------------------------------------------------------
+   Student Header (game-mode: hamburger + logo centered)
+   ------------------------------------------------------- */
+
+.student-header {
+    display: flex;
+    align-items: center;
+}
+
+.header-left,
+.header-right {
+    flex: 0 0 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.header-right {
+    justify-content: flex-end;
+}
+
+.header-center {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.app-logo {
+    font-size: 1.2rem;
+    font-weight: 800;
+    color: var(--lumo-primary-color);
+    letter-spacing: -0.02em;
+}
+
+/* -------------------------------------------------------
+   Profile Dialog
+   ------------------------------------------------------- */
+
+.profile-dialog-avatar {
+    width: 72px !important;
+    height: 72px !important;
+    font-size: 1.8rem !important;
+    background: var(--lumo-primary-color) !important;
+    color: var(--lumo-primary-contrast-color) !important;
+    margin-bottom: var(--lumo-space-s);
+}
+
+.profile-dialog-info {
+    padding-bottom: var(--lumo-space-s) !important;
+}
+
+.profile-signout-btn {
+    margin-top: var(--lumo-space-m) !important;
+}

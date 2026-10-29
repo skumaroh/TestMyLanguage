@@ -1,0 +1,1082 @@
+/* ============================================================
+   Game Mode + Global Mobile-First CSS Overrides
+   (game-mode.css)
+   ============================================================ */
+
+/* -------------------------------------------------------
+   Primary Color — Purple / Indigo theme
+   ------------------------------------------------------- */
+
+:root {
+    --lumo-primary-color: #6200ea;
+    --lumo-primary-color-50pct: rgba(98,0,234,0.5);
+    --lumo-primary-color-10pct: rgba(98,0,234,0.1);
+    --lumo-primary-text-color: #6200ea;
+    --lumo-primary-contrast-color: #fff;
+
+    /* Rounder borders throughout */
+    --lumo-border-radius-s: 8px;
+    --lumo-border-radius-m: 12px;
+    --lumo-border-radius-l: 16px;
+}
+
+/* -------------------------------------------------------
+   Global Button Touch Targets
+   ------------------------------------------------------- */
+
+vaadin-button {
+    min-height: 44px !important;
+}
+
+@media (max-width: 768px) {
+    vaadin-button {
+        min-height: 48px !important;
+    }
+
+    /* Slightly larger base font on mobile */
+    body, .v-system-error {
+        font-size: 1rem;
+    }
+}
+
+/* -------------------------------------------------------
+   Card Base — soft shadow, rounded
+   ------------------------------------------------------- */
+
+.game-card {
+    background: var(--lumo-base-color);
+    border-radius: var(--lumo-border-radius-l);
+    box-shadow: 0 2px 12px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.06);
+    padding: var(--lumo-space-l);
+    box-sizing: border-box;
+}
+
+/* -------------------------------------------------------
+   Student Header override
+   ------------------------------------------------------- */
+
+@media (max-width: 768px) {
+    /* On mobile, hide drawer in student mode (bottom nav is primary) */
+    vaadin-app-layout[drawer-opened] {
+        /* Let the drawer work for the profile card */
+    }
+
+    /* Tighten navbar padding on mobile */
+    .student-header {
+        padding: 0 var(--lumo-space-s) !important;
+    }
+}
+
+/* -------------------------------------------------------
+   Teacher Drawer — better mobile touch targets
+   ------------------------------------------------------- */
+
+vaadin-side-nav-item::part(item) {
+    min-height: 48px;
+    display: flex;
+    align-items: center;
+    padding: var(--lumo-space-s) var(--lumo-space-l);
+    border-radius: 0;
+    transition: background 0.15s ease;
+}
+
+vaadin-side-nav-item::part(item):hover {
+    background: var(--lumo-contrast-5pct);
+}
+
+vaadin-side-nav-item[active]::part(item) {
+    background: var(--lumo-primary-color-10pct);
+    border-left: 3px solid var(--lumo-primary-color);
+    font-weight: 600;
+    color: var(--lumo-primary-text-color);
+}
+
+/* -------------------------------------------------------
+   Play View (ListView / TextGameForm) — Mockup Redesign
+   Base styles target landscape / tablet / wide mobile.
+   Portrait phones get a stacked layout further below.
+   ------------------------------------------------------- */
+
+/* Card wrapper around the whole game */
+.game-container {
+    display: flex;
+    flex-direction: column;
+    gap: var(--lumo-space-m);
+    width: 100%;
+    max-width: 960px;
+    margin: 0 auto;
+    padding: var(--lumo-space-l);
+    background: var(--lumo-base-color);
+    border-radius: var(--lumo-border-radius-l);
+    box-shadow: 0 2px 16px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.06);
+    box-sizing: border-box;
+}
+
+/* Enforce row order to match mockup regardless of DOM/order regressions */
+.game-question-row { order: 1; }
+.game-content-row { order: 2; }
+.game-status-row { order: 3; }
+.letter-tiles-grid { order: 4; }
+
+/* "Find word for:" header row */
+.game-question-row {
+    display: flex;
+    align-items: center;
+    gap: var(--lumo-space-m);
+}
+
+.game-question-label {
+    font-weight: 700;
+    white-space: nowrap;
+    color: var(--lumo-body-text-color);
+}
+
+/* Dashed input-style box showing the prompt word */
+.game-question-value {
+    flex: 1;
+    padding: var(--lumo-space-s) var(--lumo-space-m);
+    border: 1px dashed var(--lumo-contrast-30pct);
+    border-radius: var(--lumo-border-radius-m);
+    font-size: 1.1rem;
+    color: var(--lumo-body-text-color);
+    background: var(--lumo-contrast-5pct);
+}
+
+/* Content row: [left actions] [image] [right actions] */
+.game-content-row {
+    display: grid;
+    grid-template-columns: minmax(150px, 0.65fr) minmax(0, 1.7fr) minmax(150px, 0.65fr);
+    align-items: center;
+    gap: var(--lumo-space-l);
+}
+
+.game-left-actions,
+.game-right-actions {
+    display: flex;
+    flex-direction: column;
+    gap: var(--lumo-space-m);
+    min-width: 0;
+    align-self: stretch;
+}
+
+/* Shared action button look — white card, purple outline, icon + label */
+.game-action-btn {
+    width: 100% !important;
+    max-width: 100%;
+    min-width: 0;
+    min-height: 56px !important;
+    justify-content: center;
+    gap: var(--lumo-space-s);
+    font-weight: 700 !important;
+    border-radius: var(--lumo-border-radius-m) !important;
+    background: var(--lumo-base-color) !important;
+    color: var(--lumo-primary-text-color) !important;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.08) !important;
+    border: 1px solid var(--lumo-contrast-10pct) !important;
+    cursor: pointer;
+    transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+
+.game-action-btn vaadin-icon,
+.game-action-btn iron-icon {
+    color: var(--lumo-primary-text-color);
+}
+
+.game-action-btn:hover {
+    box-shadow: 0 3px 10px rgba(98,0,234,0.18) !important;
+}
+
+.game-action-btn:active {
+    transform: scale(0.97);
+}
+
+/* PLAY — highlighted with light purple fill + purple border */
+.game-play-btn {
+    background: var(--lumo-primary-color-10pct) !important;
+    border: 2px solid var(--lumo-primary-color) !important;
+}
+
+/* CLEAR — red label/icon */
+.game-clear-btn,
+.game-clear-btn vaadin-icon {
+    color: var(--lumo-error-text-color) !important;
+}
+
+/* AUDIO ONLY — purple fill while active, matching selected letter tiles */
+.game-audio-help-btn.active {
+    background: var(--lumo-primary-color) !important;
+    color: #fff !important;
+    border-color: var(--lumo-primary-color) !important;
+    box-shadow: 0 4px 12px rgba(98,0,234,0.3) !important;
+}
+
+.game-audio-help-btn.active vaadin-icon,
+.game-audio-help-btn.active iron-icon {
+    color: #fff !important;
+}
+
+/* PLAY (mode option) — purple fill while active, same treatment as the other
+   two mode-group options. Distinct from .game-play-btn, which is reserved
+   for the standalone PLAY submit button below the image. */
+.game-mode-play-btn.active {
+    background: var(--lumo-primary-color) !important;
+    color: #fff !important;
+    border-color: var(--lumo-primary-color) !important;
+    box-shadow: 0 4px 12px rgba(98,0,234,0.3) !important;
+}
+
+.game-mode-play-btn.active vaadin-icon,
+.game-mode-play-btn.active iron-icon {
+    color: #fff !important;
+}
+
+/* PLAY W/ AUDIO — purple fill while active, same treatment as AUDIO ONLY */
+.game-play-audio-btn.active {
+    background: var(--lumo-primary-color) !important;
+    color: #fff !important;
+    border-color: var(--lumo-primary-color) !important;
+    box-shadow: 0 4px 12px rgba(98,0,234,0.3) !important;
+}
+
+.game-play-audio-btn.active vaadin-icon,
+.game-play-audio-btn.active iron-icon {
+    color: #fff !important;
+}
+
+/* Mode group — bordered box enclosing all three mutually-exclusive mode
+   buttons (PLAY, PLAY W/ AUDIO, AUDIO ONLY) so the choice is explicit;
+   exactly one is always active (purple fill). Class name kept as
+   game-audio-group for historical reasons (was audio-only before PLAY
+   joined the group) — not worth the risk of a wider rename. */
+.game-audio-group {
+    display: flex;
+    flex-direction: column;
+    gap: var(--lumo-space-s);
+    padding: var(--lumo-space-s);
+    border: 1px solid var(--lumo-primary-color-50pct);
+    border-radius: var(--lumo-border-radius-m);
+    background: var(--lumo-primary-color-10pct);
+    box-sizing: border-box;
+    width: 100%;
+}
+
+.game-audio-group-label {
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-align: center;
+    color: var(--lumo-secondary-text-color);
+}
+
+/* Checkbox indicator inside each mode button — scaled down so it doesn't
+   dominate the already-compact button (further reduced at smaller
+   breakpoints below, matching the letter-assets status-badge approach). */
+.game-audio-group vaadin-checkbox {
+    transform: scale(0.85);
+    transform-origin: center;
+}
+
+/* HELP — lighter than the primary actions but clearly a button */
+.game-help-btn {
+    min-height: 44px !important;
+    font-weight: 600 !important;
+}
+
+/* Image card — holds the image plus the PLAY submit button stacked below it
+   (see TextGameForm#loadTextGame), so PLAY appears in the same spot on every
+   layout without any per-breakpoint positioning: it's just a normal sibling
+   inside the wrapper that the outer grid already places correctly. */
+.game-image-wrapper {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: var(--lumo-space-s);
+    width: 100%;
+    min-width: 0;
+    padding: 0;
+    margin: 0;
+}
+
+.game-image-card {
+    width: 100%;
+    max-height: 320px;
+    object-fit: contain;
+    border-radius: var(--lumo-border-radius-l);
+    box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+}
+
+.game-play-submit-btn {
+    flex: 0 0 auto;
+    width: auto !important;
+    min-width: 160px;
+}
+
+/* Portrait-only clone of the result text (see TextGameForm). Hidden
+   everywhere by default; shown only inside the portrait media query below. */
+.game-result-portrait-field {
+    display: none;
+}
+
+/* Answer + Result row */
+.game-status-row {
+    display: flex;
+    gap: var(--lumo-space-m);
+    width: 100%;
+}
+
+.game-answer-field,
+.game-result-field {
+    flex: 1;
+    min-width: 0;
+}
+
+/* Give the Answer/Result input boxes a solid-border, light-background look
+   similar to the "Find word for:" box in the top row (.game-question-value),
+   but solid rather than dashed to read as an active input rather than a
+   placeholder. TextField renders its visible box in shadow DOM, so the
+   border/background has to be set on the input-field part rather than the
+   host element. !important is required: both fields are read-only
+   (TextGameForm sets ansText/resultText readOnly(true)), and Lumo's own
+   theme applies a dashed border to read-only text fields with enough
+   specificity to otherwise win over this plain class selector. */
+.game-answer-field::part(input-field),
+.game-result-field::part(input-field) {
+    border: 1px solid var(--lumo-contrast-30pct) !important;
+    border-radius: var(--lumo-border-radius-m) !important;
+    background: var(--lumo-contrast-5pct) !important;
+}
+
+/* Letter tiles grid */
+.letter-tiles-grid {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: var(--lumo-space-s);
+}
+
+.letter-tile {
+    min-width: 56px !important;
+    min-height: 56px !important;
+    font-size: 1.4rem !important;
+    font-weight: 600 !important;
+    border-radius: var(--lumo-border-radius-m) !important;
+    background: var(--lumo-base-color) !important;
+    color: var(--lumo-body-text-color) !important;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1) !important;
+    border: 1px solid var(--lumo-contrast-10pct) !important;
+    cursor: pointer;
+    transition: transform 0.12s ease, box-shadow 0.12s ease;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+.letter-tile:hover {
+    box-shadow: 0 4px 12px rgba(98,0,234,0.2) !important;
+}
+
+.letter-tile:active {
+    transform: scale(0.95);
+}
+
+.letter-tile.selected {
+    background: var(--lumo-primary-color) !important;
+    color: #fff !important;
+    box-shadow: 0 4px 12px rgba(98,0,234,0.3) !important;
+}
+
+/* Listen button */
+.listen-btn {
+    border-radius: var(--lumo-border-radius-m) !important;
+}
+
+/* -------------------------------------------------------
+   V2 container hard override (bypass legacy list-view.css rules)
+   ------------------------------------------------------- */
+
+.game-container-v2 {
+    display: flex !important;
+    flex-direction: column !important;
+    width: 100% !important;
+    max-width: 960px !important;
+    margin: 0 auto !important;
+    padding: var(--lumo-space-l) !important;
+    gap: var(--lumo-space-m) !important;
+    background: var(--lumo-base-color) !important;
+    border-radius: var(--lumo-border-radius-l) !important;
+    box-shadow: 0 2px 16px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.06) !important;
+    height: auto !important;
+    overflow: visible !important;
+    align-items: stretch !important;
+}
+
+.game-container-v2 .game-question-row { order: 1 !important; }
+.game-container-v2 .game-content-row { order: 2 !important; }
+.game-container-v2 .game-status-row { order: 3 !important; }
+.game-container-v2 .letter-tiles-grid { order: 4 !important; }
+
+.game-container-v2 .game-content-row {
+    display: grid !important;
+    grid-template-columns: minmax(150px, 0.65fr) minmax(0, 1.7fr) minmax(150px, 0.65fr) !important;
+    gap: var(--lumo-space-l) !important;
+    align-items: center !important;
+    overflow: visible !important;
+}
+
+.game-container-v2 .game-left-actions,
+.game-container-v2 .game-right-actions {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: var(--lumo-space-m) !important;
+    min-width: 0 !important;
+    width: 100% !important;
+    overflow: visible !important;
+}
+
+/* Regular browser mode: make action buttons shorter (about quarter-ish visual width) */
+@media (min-width: 1024px) {
+    .game-container-v2 .game-action-btn {
+        width: 72% !important;
+        max-width: 180px !important;
+        min-width: 120px !important;
+        margin-left: auto !important;
+        margin-right: auto !important;
+    }
+
+    /* The audio group box takes the narrowed width itself; buttons inside it
+       fill the box so they don't shrink twice. */
+    .game-container-v2 .game-audio-group {
+        width: 72%;
+        max-width: 180px;
+        min-width: 120px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+    .game-container-v2 .game-audio-group .game-action-btn {
+        width: 100% !important;
+        min-width: 0 !important;
+        margin: 0 !important;
+    }
+}
+
+/* -------------------------------------------------------
+   Game mode — full-screen no-scroll layout (all modes)
+   Uses dvh so browser chrome (address bar, tab bar) is
+   accounted for automatically on every mobile model.
+   ------------------------------------------------------- */
+
+/* Warm cream background replaces harsh white */
+body.in-game-mode,
+body.in-game-mode vaadin-app-layout::part(content) {
+    background: #f5f0e8 !important;
+}
+
+/* Hide admin toolbar — not useful during play */
+body.in-game-mode .toolbar {
+    display: none !important;
+}
+
+/* TextGameForm (vaadin-form-layout.text-game-form): fill parent height */
+body.in-game-mode .text-game-form {
+    height: 100% !important;
+    overflow: hidden !important;
+}
+
+/* Game container — fills height, distributes space via flex column */
+body.in-game-mode .game-container-v2 {
+    background: #f5f0e8 !important;
+    box-shadow: none !important;          /* flat when filling viewport */
+    border-radius: 0 !important;
+    max-width: 100% !important;
+    overflow: hidden !important;
+    box-sizing: border-box !important;
+}
+
+/* Row flex roles — image area absorbs all remaining space */
+body.in-game-mode .game-question-row  { flex: 0 0 auto !important; }
+body.in-game-mode .game-status-row    { flex: 0 0 auto !important; }
+body.in-game-mode .letter-tiles-grid  { flex: 0 0 auto !important; }
+body.in-game-mode .game-content-row   {
+    flex: 1 1 0 !important;
+    min-height: 0 !important;   /* allows flex child to shrink below intrinsic size */
+}
+
+/* Image fills whatever height content-row gives it */
+body.in-game-mode .game-image-wrapper {
+    height: 100% !important;
+    overflow: hidden !important;
+}
+body.in-game-mode .game-image-card {
+    max-height: 100% !important;
+    max-width: 100% !important;
+    object-fit: contain !important;
+}
+
+/* Tile size: scales with the SMALLER viewport dimension (portrait or landscape).
+   vmin = min(vw, vh). clamp() prevents extremes across device sizes.
+   Portrait 390px: 12vmin = 46.8px  |  Landscape 390px: same 46.8px
+   Desktop 800px tall: clamped to 56px ceiling */
+body.in-game-mode .letter-tile {
+    width:      clamp(36px, 12vmin, 56px) !important;
+    height:     clamp(36px, 12vmin, 56px) !important;
+    min-width:  unset !important;
+    min-height: unset !important;
+    font-size:  clamp(0.8rem, 3vmin, 1.4rem) !important;
+}
+
+/* Inline hamburger: hidden on desktop (navbar hamburger is used there) */
+.game-question-row .game-hamburger-btn {
+    display: none !important;
+}
+/* Override the global vaadin-button min-height when it's our compact hamburger */
+body.in-game-mode .game-hamburger-btn {
+    min-height: 28px !important;
+    height: 28px !important;
+    width: 28px !important;
+}
+
+/* -------------------------------------------------------
+   Desktop (≥ 1025px): use iPad/tablet layout.
+   Reverts the mobile full-screen overrides so the container
+   is auto-height and scrollable — same as iPad behavior.
+   ------------------------------------------------------- */
+@media (min-width: 1025px) {
+    /* 1. Answer + Result: suppress text-field intrinsic min-width */
+    .game-container-v2 .game-status-row .game-answer-field,
+    .game-container-v2 .game-status-row .game-result-field {
+        min-width: 0 !important;
+        --vaadin-text-field-default-width: 0px !important;
+        flex-shrink: 1 !important;
+    }
+
+    /* 2. Revert mobile full-screen body.in-game-mode overrides.
+          Let the container be auto-height and scrollable (iPad behavior). */
+    body.in-game-mode .text-game-form {
+        height: auto !important;
+        overflow: visible !important;
+    }
+    body.in-game-mode .game-container-v2 {
+        height: auto !important;
+        max-height: none !important;
+        overflow: visible !important;
+        /* Restore the 960px card appearance when not filling the viewport */
+        max-width: 960px !important;
+        box-shadow: 0 2px 16px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.06) !important;
+        border-radius: var(--lumo-border-radius-l) !important;
+    }
+    body.in-game-mode .game-content-row {
+        flex: 0 0 auto !important;
+    }
+    body.in-game-mode .game-image-wrapper {
+        height: auto !important;
+        overflow: visible !important;
+    }
+    body.in-game-mode .game-image-card {
+        max-height: 320px !important;
+        width: 100% !important;
+    }
+}
+
+/* -------------------------------------------------------
+   Portrait phones — single-column stacked layout
+   ------------------------------------------------------- */
+
+@media (max-width: 768px) and (orientation: portrait) {
+    /* Compact outer padding */
+    .list-view,
+    .text-game-form {
+        padding: var(--lumo-space-xs) !important;
+    }
+
+    .game-container {
+        padding: var(--lumo-space-s);
+        gap: var(--lumo-space-xs);
+    }
+
+    .game-container-v2 {
+        padding: var(--lumo-space-s) !important;
+        gap: var(--lumo-space-xs) !important;
+        max-width: 100% !important;
+    }
+
+    /* Question row: single horizontal line */
+    .game-question-row {
+        flex-direction: row !important;
+        align-items: center !important;
+        gap: var(--lumo-space-s) !important;
+        flex-wrap: nowrap;
+    }
+
+    .game-question-label {
+        font-size: 0.8rem;
+        white-space: nowrap;
+    }
+
+    .game-question-value {
+        font-size: 1rem;
+        padding: var(--lumo-space-xs) var(--lumo-space-s);
+    }
+
+    /* Content row: keep 3-col grid with narrower side columns.
+       Named areas let the portrait-only result clone dock directly above the
+       image without touching the non-portrait grid rules. PLAY now lives
+       inside game-image-wrapper itself (see TextGameForm), so there's no
+       separate "play" row/area to position here anymore. */
+    .game-content-row,
+    .game-container-v2 .game-content-row {
+        display: grid !important;
+        grid-template-columns: 0.5fr 1fr 0.5fr !important;
+        grid-template-rows: auto minmax(0, 1fr) !important;
+        grid-template-areas:
+            "left result right"
+            "left image  right" !important;
+        flex-direction: unset !important;
+        gap: var(--lumo-space-xs) !important;
+        align-items: center;
+    }
+
+    .game-left-actions  { grid-area: left !important; }
+    .game-right-actions { grid-area: right !important; }
+
+    /* Remove portrait order:-1 — grid handles column placement */
+    .game-image-wrapper {
+        order: unset !important;
+        grid-area: image !important;
+    }
+
+    /* Trimmed from 190px to make room for the PLAY button now stacked below
+       the image inside the same wrapper, within the same overall budget. */
+    .game-image-card {
+        max-height: 150px !important;
+        object-fit: cover;
+    }
+
+    /* width:100% (matching the image above it) instead of the base rule's
+       width:auto + min-width — auto-sizing to the "PLAY (n/7)" label could
+       exceed the narrow image column's actual available width, and the
+       overflow gets silently clipped by the no-scroll layout's
+       overflow:hidden ancestors rather than shown. */
+    .game-play-submit-btn,
+    .game-container-v2 .game-play-submit-btn {
+        min-height: 28px !important;
+        max-height: 40px !important;
+        font-size: 0.75rem !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+    }
+
+    /* Action buttons: half size */
+    .game-action-btn,
+    .game-container-v2 .game-action-btn {
+        min-height: 28px !important;
+        max-height: 36px !important;
+        font-size: 0.7rem !important;
+        padding: 2px 4px !important;
+        width: 100% !important;
+        flex: 1 1 0 !important;
+        min-width: 0 !important;
+        max-width: none !important;
+        margin: 0 !important;
+    }
+
+    /* Mode group holds three stacked buttons (PLAY, PLAY W/ AUDIO, AUDIO ONLY).
+       flex-grow:0 keeps it from competing for extra column space against
+       CLEAR/HELP — it takes exactly what its own three buttons need instead
+       of an equal (or arbitrarily larger) share, which previously either
+       clipped a button or left a large empty gap depending on the exact
+       flex-grow value tried. flex-shrink:1 still lets it compress slightly
+       rather than overflow on an unusually short phone.
+
+       flex-basis:auto alone isn't reliable on first paint: this element is
+       simultaneously a flex CONTAINER (for its three buttons) and a flex ITEM
+       (within game-left-actions), and a flex item's default min-height:auto
+       can under-resolve before all sibling sizes have settled. An explicit
+       min-height removes the ambiguity: 3 buttons (28px min each) + label +
+       gaps + padding. */
+    .game-audio-group {
+        padding: 4px !important;
+        gap: var(--lumo-space-xs) !important;
+        flex: 0 1 auto !important;
+        min-height: 118px !important;
+    }
+    .game-audio-group-label {
+        font-size: 0.5rem;
+    }
+    .game-audio-group vaadin-checkbox {
+        transform: scale(0.65);
+    }
+
+    /* Help now sits below a taller audio group — a small nudge keeps it from
+       crowding the group's bottom edge instead of just touching it. */
+    .game-help-btn {
+        margin-top: var(--lumo-space-xs) !important;
+    }
+
+    /* Action columns: keep vertical stacking (CLEAR; HINT/RESET/ANS) */
+    .game-left-actions,
+    .game-right-actions,
+    .game-container-v2 .game-left-actions,
+    .game-container-v2 .game-right-actions {
+        flex-direction: column !important;
+        width: 100% !important;
+        gap: var(--lumo-space-xs) !important;
+        align-self: stretch;
+    }
+
+    /* Reclaimed line above the image: centered answer feedback */
+    .game-result-portrait-field {
+        grid-area: result !important;
+        display: flex !important;
+        justify-content: center;
+        align-items: center;
+        font-size: 1.4rem;
+        font-weight: 700;
+        min-height: 1.4em;
+        color: var(--lumo-primary-text-color);
+    }
+
+    .game-status-row .game-result-field {
+        display: none !important;
+    }
+
+    /* Game mode portrait: precise height + inline hamburger */
+    body.in-game-mode .game-container-v2 {
+        /* 64px = bottom-nav height (including safe-area on notched phones) */
+        height: calc(100dvh - 64px) !important;
+        max-height: calc(100dvh - 64px) !important;
+        padding-bottom: 0 !important;
+    }
+    body.in-game-mode .game-question-row .game-hamburger-btn {
+        display: flex !important;
+        align-items: center !important;
+    }
+    /* flex:1 1 auto + min-height:0 (matching the landscape breakpoint's
+       identical fix) lets the image shrink to leave room for the PLAY
+       button stacked below it in the same flex-column wrapper — without
+       this, the image claims the full column height and pushes the
+       button's bottom edge past the wrapper's overflow:hidden boundary,
+       clipping it. */
+    body.in-game-mode .game-image-card {
+        max-height: 100% !important;    /* content-row (flex:1) governs height */
+        flex: 1 1 auto;
+        min-height: 0;
+    }
+    body.in-game-mode .letter-tiles-grid {
+        gap: clamp(3px, 1vmin, 6px) !important;
+    }
+}
+
+/* -------------------------------------------------------
+   Landscape phones — compact no-scroll layout
+   (≤900px wide, landscape orientation)
+   ------------------------------------------------------- */
+
+@media (max-width: 900px) and (orientation: landscape) {
+    /* Show inline hamburger (navbar is hidden in landscape game mode) */
+    body.in-game-mode .game-question-row .game-hamburger-btn {
+        display: flex !important;
+        align-items: center !important;
+    }
+
+    /* Full height: no bottom-nav in landscape */
+    body.in-game-mode .game-container-v2 {
+        height: 100dvh !important;
+        max-height: 100dvh !important;
+        padding: 2px 4px !important;
+        gap: 2px !important;
+    }
+
+    /* Question row: ultra-compact, single line */
+    body.in-game-mode .game-question-row {
+        flex-direction: row !important;
+        gap: var(--lumo-space-xs) !important;
+    }
+    body.in-game-mode .game-question-label {
+        font-size: clamp(0.6rem, 1.5vmin, 0.75rem) !important;
+    }
+    body.in-game-mode .game-question-value {
+        font-size: clamp(0.7rem, 1.8vmin, 0.9rem) !important;
+        padding: 1px 4px !important;
+    }
+
+    /* Content row: narrower side columns, cap height so tiles fit */
+    body.in-game-mode .game-content-row,
+    body.in-game-mode .game-container-v2 .game-content-row {
+        grid-template-columns: 0.4fr 1fr 0.4fr !important;
+        gap: var(--lumo-space-xs) !important;
+        max-height: 40dvh;
+    }
+
+    /* Image: fills content-row, constrained by max-height above. flex:1 1 auto
+       (now a sibling of the PLAY button in the same flex-column wrapper)
+       lets it shrink to make room for the button instead of squeezing it
+       out in this already-cramped layout. */
+    body.in-game-mode .game-image-card {
+        max-height: 100% !important;
+        flex: 1 1 auto;
+        min-height: 0;
+    }
+
+    /* width:100% (matching the image beside/above it) instead of the base
+       rule's width:auto + min-width — same overflow-clip risk as the
+       portrait breakpoint above. */
+    body.in-game-mode .game-play-submit-btn {
+        flex: 0 0 auto;
+        min-height: clamp(20px, 5vmin, 28px) !important;
+        max-height: clamp(24px, 6vmin, 32px) !important;
+        font-size: clamp(0.55rem, 1.4vmin, 0.7rem) !important;
+        width: 100% !important;
+        max-width: 100%;
+        min-width: 0 !important;
+    }
+
+    /* Action buttons: fluid via vmin */
+    body.in-game-mode .game-action-btn,
+    body.in-game-mode .game-container-v2 .game-action-btn {
+        min-height: clamp(20px, 5vmin, 28px) !important;
+        max-height: clamp(24px, 6vmin, 32px) !important;
+        font-size: clamp(0.55rem, 1.4vmin, 0.7rem) !important;
+        padding: 0 2px !important;
+        flex: 1 1 0 !important;
+    }
+
+    /* Audio group: minimal chrome in the ultra-compact landscape column */
+    body.in-game-mode .game-audio-group {
+        padding: 3px !important;
+        gap: 3px !important;
+    }
+    body.in-game-mode .game-audio-group-label {
+        font-size: 0.45rem;
+    }
+    body.in-game-mode .game-audio-group vaadin-checkbox {
+        transform: scale(0.6);
+    }
+
+    /* Tiles: tighter gap; vmin sizing from global rule already applies */
+    body.in-game-mode .letter-tiles-grid {
+        gap: clamp(2px, 0.8vmin, 5px) !important;
+    }
+}
+
+/* -------------------------------------------------------
+   iPad / tablet portrait — full-screen, larger-than-phone sizing
+   (769–1024px wide, portrait; closes the gap between the 768px
+   phone bucket and the 1025px desktop bucket)
+   ------------------------------------------------------- */
+
+@media (min-width: 769px) and (max-width: 1024px) and (orientation: portrait) {
+    /* Inline hamburger replaces the hidden navbar, sized up from phone's 28px */
+    body.in-game-mode .game-question-row .game-hamburger-btn {
+        display: flex !important;
+        align-items: center !important;
+    }
+    body.in-game-mode .game-hamburger-btn {
+        min-height: 36px !important;
+        height: 36px !important;
+        width: 36px !important;
+    }
+
+    /* No bottom-nav, navbar hidden → claim the full viewport */
+    body.in-game-mode .game-container-v2 {
+        height: 100dvh !important;
+        max-height: 100dvh !important;
+        padding: var(--lumo-space-m) var(--lumo-space-l) !important;
+        gap: var(--lumo-space-s) !important;
+    }
+
+    /* Question row: comfortable single line, closer to desktop sizing */
+    body.in-game-mode .game-question-row {
+        flex-direction: row !important;
+        align-items: center !important;
+        gap: var(--lumo-space-m) !important;
+        flex-wrap: nowrap;
+    }
+    body.in-game-mode .game-question-label {
+        font-size: clamp(0.95rem, 2.2vmin, 1.1rem) !important;
+        white-space: nowrap;
+    }
+    body.in-game-mode .game-question-value {
+        font-size: clamp(1rem, 2.4vmin, 1.2rem) !important;
+        padding: var(--lumo-space-xs) var(--lumo-space-m) !important;
+    }
+
+    /* 3-col grid: wider side columns than phone's 0.5/1/0.5 — more room for bigger buttons */
+    body.in-game-mode .game-content-row,
+    body.in-game-mode .game-container-v2 .game-content-row {
+        display: grid !important;
+        grid-template-columns: 0.6fr 1.3fr 0.6fr !important;
+        gap: var(--lumo-space-m) !important;
+        align-items: center;
+    }
+
+    /* Action buttons: between phone's 28px and desktop's 56px */
+    body.in-game-mode .game-action-btn,
+    body.in-game-mode .game-container-v2 .game-action-btn {
+        min-height: clamp(40px, 6.5vmin, 48px) !important;
+        max-height: clamp(44px, 7.5vmin, 52px) !important;
+        font-size: clamp(0.85rem, 2vmin, 1rem) !important;
+        padding: 4px 8px !important;
+        width: 100% !important;
+        flex: 1 1 0 !important;
+        min-width: 0 !important;
+        max-width: none !important;
+        margin: 0 !important;
+    }
+    body.in-game-mode .game-left-actions,
+    body.in-game-mode .game-right-actions,
+    body.in-game-mode .game-container-v2 .game-left-actions,
+    body.in-game-mode .game-container-v2 .game-right-actions {
+        flex-direction: column !important;
+        width: 100% !important;
+        gap: var(--lumo-space-s) !important;
+        align-self: stretch;
+    }
+
+    /* Letter tiles: noticeably bigger than phone's 36-56px clamp — there's room to spare */
+    body.in-game-mode .letter-tile {
+        width:      clamp(48px, 9vmin, 64px) !important;
+        height:     clamp(48px, 9vmin, 64px) !important;
+        font-size:  clamp(1rem, 3vmin, 1.5rem) !important;
+    }
+    body.in-game-mode .letter-tiles-grid {
+        gap: clamp(6px, 1.4vmin, 10px) !important;
+    }
+}
+
+/* -------------------------------------------------------
+   Writing Skill View — Mobile Redesign
+   ------------------------------------------------------- */
+
+@media (max-width: 768px) {
+    .writing-skill-view {
+        padding: var(--lumo-space-s) !important;
+    }
+
+    /* Giant letter display */
+    .writing-skill-target {
+        font-size: 5rem !important;
+        text-align: center;
+        display: block;
+        margin: var(--lumo-space-m) auto;
+    }
+
+    .writing-skill-preview {
+        width: 120px !important;
+        height: 120px !important;
+        margin: 0 auto;
+        display: block;
+    }
+
+    /* Watch Demo button — full width */
+    .demo-btn {
+        width: 100% !important;
+        min-height: 52px !important;
+        font-size: 1rem !important;
+        font-weight: 600 !important;
+        margin-bottom: var(--lumo-space-s) !important;
+    }
+
+    /* Writing pad — fill available height */
+    .writing-pad,
+    .writing-canvas {
+        width: 100% !important;
+        min-height: 280px !important;
+        border-radius: var(--lumo-border-radius-l) !important;
+        border: 2px solid var(--lumo-contrast-20pct) !important;
+        touch-action: none;
+    }
+
+    /* Stack actions vertically */
+    .writing-actions {
+        display: flex;
+        flex-direction: column;
+        gap: var(--lumo-space-s);
+        width: 100%;
+        margin-top: var(--lumo-space-m);
+    }
+
+    .writing-actions vaadin-button {
+        width: 100% !important;
+        min-height: 52px !important;
+    }
+
+    /* Layout: single column */
+    .writing-skill-workspace {
+        flex-direction: column !important;
+    }
+
+    .writing-skill-practice,
+    .writing-skill-results {
+        width: 100% !important;
+    }
+}
+
+/* -------------------------------------------------------
+   Dashboard View — Mobile Responsive
+   ------------------------------------------------------- */
+
+@media (max-width: 768px) {
+    .dashboard-view {
+        padding: var(--lumo-space-m) var(--lumo-space-s) !important;
+    }
+
+    .dashboard-stats-row {
+        flex-direction: row !important;
+        flex-wrap: wrap;
+    }
+
+    .stat-card {
+        flex: 1 1 calc(50% - var(--lumo-space-s));
+        min-width: 140px;
+    }
+}
+
+/* -------------------------------------------------------
+   Teacher Forms — Mobile Friendly
+   ------------------------------------------------------- */
+
+@media (max-width: 768px) {
+    vaadin-text-field,
+    vaadin-password-field,
+    vaadin-combo-box,
+    vaadin-select,
+    vaadin-text-area,
+    vaadin-email-field {
+        width: 100% !important;
+        min-height: 44px;
+    }
+
+    vaadin-form-layout {
+        padding: var(--lumo-space-s) !important;
+    }
+}
+
+/* -------------------------------------------------------
+   General Dialog — mobile friendly
+   ------------------------------------------------------- */
+
+@media (max-width: 768px) {
+    vaadin-dialog-overlay::part(overlay) {
+        width: calc(100vw - 32px) !important;
+        max-width: 400px;
+        max-height: calc(100dvh - 64px) !important;
+        overflow-y: auto !important;
+        border-radius: var(--lumo-border-radius-l) !important;
+    }
+
+    .admin-content-stack {
+        flex-wrap: wrap !important;
+    }
+    .admin-content-stack > * {
+        width: 100% !important;
+        flex-grow: 1 !important;
+    }
+}
+
+.admin-form-dialog::part(overlay) {
+    width: min(640px, calc(100vw - 24px));
+    max-height: calc(100dvh - 48px);
+    overflow-y: auto;
+}

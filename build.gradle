@@ -1,0 +1,156 @@
+plugins {
+    id 'java'
+    id 'org.springframework.boot' version '3.5.0'
+    id 'io.spring.dependency-management' version '1.1.7'
+    id 'com.vaadin' version '24.10.1'
+}
+
+group = 'com.infotech.language.application'
+version = '1.0-SNAPSHOT'
+sourceCompatibility = '21'
+
+configurations {
+    compileOnly {
+        extendsFrom annotationProcessor
+    }
+}
+
+repositories {
+    maven { url = 'https://repo1.maven.org/maven2/' }
+    maven { url = 'https://maven.vaadin.com/vaadin-prereleases/' }
+    maven { url = 'https://maven.vaadin.com/vaadin-addons' }
+}
+
+ext {
+    set('vaadinVersion', "24.10.1")
+    set('azureSdkVersion', "1.2.22")
+}
+
+dependencies {
+    // Vaadin
+    implementation 'com.vaadin:vaadin-spring-boot-starter'
+    implementation "com.vaadin:vaadin:${vaadinVersion}"
+    
+    // Spring Boot
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
+    implementation 'org.springframework.boot:spring-boot-starter-oauth2-client'
+    developmentOnly 'org.springframework.boot:spring-boot-devtools'
+    
+    // Azure
+    implementation 'com.azure:azure-storage-blob'
+    implementation 'com.azure:azure-identity'
+    
+    // Jakarta
+    implementation 'jakarta.servlet:jakarta.servlet-api:6.0.0'
+    implementation 'jakarta.annotation:jakarta.annotation-api:2.1.0'
+    implementation 'jakarta.enterprise:jakarta.enterprise.cdi-api:4.0.0'
+    implementation 'jakarta.enterprise.concurrent:jakarta.enterprise.concurrent-api:3.0.0'
+    
+    // PostgreSQL
+    implementation 'org.postgresql:postgresql:42.7.4'
+    
+    // SendGrid for email services
+    implementation 'com.sendgrid:sendgrid-java:4.10.2'
+    
+    // Security - version managed by Spring Boot
+    implementation 'org.springframework.security:spring-security-web'
+    
+    // Other
+    implementation 'org.checkerframework:checker-qual:3.12.0'
+    
+    // Image processing — generates responsive variants (thumb/mobile/tablet/desktop) at upload
+    implementation 'net.coobird:thumbnailator:0.4.20'
+
+    // Pure-JVM MP3 encoder used to transcode validated TTS audio for storage/playback
+    implementation 'de.sciss:jump3r:1.0.5'
+
+    // Circuit breaker around outbound Azure OpenAI/Speech calls (Acceptimico resiliency
+    // milestone) - plain core module, not the spring-boot3 starter, since every existing
+    // *Service test in this package constructs its service under test directly via `new X(...)`
+    // rather than booting a Spring ApplicationContext, so annotation-driven (@CircuitBreaker)
+    // AOP wiring would be invisible to them. The programmatic CircuitBreaker API this codebase
+    // actually uses works identically either way.
+    implementation 'io.github.resilience4j:resilience4j-circuitbreaker:2.4.0'
+
+    // Testing
+    testImplementation('org.springframework.boot:spring-boot-starter-test') {
+        exclude group: 'org.junit.vintage', module: 'junit-vintage-engine'
+    }
+    testImplementation 'org.junit.vintage:junit-vintage-engine'
+    testImplementation('com.vaadin:vaadin-testbench') {
+        exclude group: 'org.hamcrest', module: 'hamcrest-core'
+    }
+    testImplementation 'io.github.bonigarcia:webdrivermanager:3.8.1'
+}
+
+dependencyManagement {
+    imports {
+        mavenBom "com.vaadin:vaadin-bom:${vaadinVersion}"
+        mavenBom "com.azure:azure-sdk-bom:${azureSdkVersion}"
+    }
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
+
+    // *IT classes (e.g. LoginIT) are Vaadin TestBench browser tests: they need a running
+    // Chrome instance, the app already running on localhost:8080, and a valid Vaadin Pro/
+    // TestBench license. None of that is available in this sandbox/CI environment, so class
+    // loading itself fails with a LicenseException before any @Test method runs. Excluded from
+    // the regular unit test run; run them manually in an environment with those prerequisites.
+    exclude '**/it/**'
+
+    // *IntegrationTest classes (e.g. UserRepositoryIntegrationTest) use @AutoConfigureTestDatabase
+    // (replace = NONE), so they connect to whatever spring.datasource.url actually resolves to -
+    // the real Azure Postgres server by default (application.properties), not an embedded test DB.
+    // When that server isn't reachable (no VPN, IP not allow-listed, or a firewall that drops
+    // packets instead of refusing the connection), the connection attempt can hang for many
+    // minutes before finally timing out, which is what makes a plain `./gradlew test` run
+    // unpredictably slow rather than cleanly fast-failing. Excluded from the regular run; use the
+    // `integrationTest` task below when a real database is actually reachable (e.g. in CI, or
+    // locally with DATABASE_URL pointed at a reachable Postgres instance).
+    exclude '**/*IntegrationTest.class'
+}
+
+tasks.register('integrationTest', Test) {
+    description = 'Runs *IntegrationTest classes against a real, reachable database. See the ' +
+            'exclude note on the `test` task for why these are not part of the default run.'
+    group = 'verification'
+    useJUnitPlatform()
+    include '**/*IntegrationTest.class'
+    testClassesDirs = sourceSets.test.output.classesDirs
+    classpath = sourceSets.test.runtimeClasspath
+}
+
+// Vaadin configuration
+vaadin {
+    pnpmEnable = false
+}
+
+// Configure bootRun task similar to Maven's spring-boot:run
+bootRun {
+    // Similar to Maven's wait and maxAttempts configuration
+    systemProperty 'spring.devtools.restart.enabled', 'true'
+    doFirst {
+        def envFile = file('.env')
+        if (envFile.exists()) {
+            envFile.eachLine { line ->
+                def trimmed = line.trim()
+                if (!trimmed.startsWith('#') && trimmed.contains('=')) {
+                    def idx = trimmed.indexOf('=')
+                    def key = trimmed.substring(0, idx).trim()
+                    def value = trimmed.substring(idx + 1).trim()
+                    environment key, value
+                }
+            }
+        }
+    }
+}
+
+// Production profile configuration
+tasks.register('productionBuild') {
+    group = 'build'
+    description = 'Builds the application for production'
+    dependsOn 'clean', 'vaadinBuildFrontend', 'build'
+}

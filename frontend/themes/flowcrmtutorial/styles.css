@@ -1,0 +1,14 @@
+@import url('./views/list-view.css');
+@import url('./views/nav-drawer.css');
+@import url('./views/dashboard.css');
+@import url('./views/writing-skill.css');
+@import url('./views/mobile-nav.css');
+@import url('./views/game-mode.css');
+@import url('./views/letter-assets.css');
+@import url('./views/writing-pad.css');
+@import url('lumo-css-framework/all-classes.css');
+
+a[highlight] {
+    font-weight: bold;
+    text-decoration: underline;
+}

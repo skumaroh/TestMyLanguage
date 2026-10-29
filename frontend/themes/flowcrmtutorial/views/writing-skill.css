@@ -1,0 +1,154 @@
+.writing-skill-view {
+    padding: var(--lumo-space-l);
+    max-width: 1180px;
+    margin: 0 auto;
+}
+
+.writing-skill-card {
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.writing-skill-chip {
+    border: 1px solid var(--lumo-contrast-10pct);
+    border-radius: 999px;
+    padding: 0.35rem 0.75rem;
+    background: var(--lumo-contrast-5pct);
+}
+
+.writing-skill-chip-label {
+    color: var(--lumo-secondary-text-color);
+    font-size: var(--lumo-font-size-s);
+}
+
+.writing-skill-workspace {
+    gap: var(--lumo-space-m);
+    flex-wrap: wrap;
+}
+
+.writing-skill-practice,
+.writing-skill-results {
+    gap: var(--lumo-space-m);
+}
+
+/* Width the writing pad's frame (and its Submit button, kept in lockstep)
+   should target. Uncapped on desktop — fills the full width of the practice
+   card, which is itself already bounded by .writing-skill-view's max-width
+   above, so this can't run away on an ultra-wide monitor. See the "Mobile
+   overrides" media query below for the mobile value, and writing-pad.js for
+   how the pad's shadow DOM consumes this. */
+.writing-skill-practice {
+    --writing-pad-max-width: 360px;
+}
+
+@media (min-width: 769px) {
+    .writing-skill-practice {
+        --writing-pad-max-width: none;
+    }
+}
+
+.writing-skill-target {
+    font-size: 4rem;
+    font-weight: 700;
+    line-height: 1;
+    color: var(--lumo-primary-text-color);
+    display: block;
+    text-align: center;
+}
+
+.example-letter-highlight {
+    background-color: #fff3b0;
+    border-radius: var(--lumo-border-radius-s);
+    padding: 0 0.1em;
+}
+
+.writing-skill-preview {
+    width: 160px;
+    height: 160px;
+    object-fit: contain;
+    border-radius: var(--lumo-border-radius-l);
+    border: 1px solid var(--lumo-contrast-10pct);
+    background: #fff;
+}
+
+/* Watch Demo button */
+.demo-btn {
+    font-weight: 600 !important;
+}
+
+/* Writing action buttons */
+.writing-actions {
+    flex-wrap: wrap;
+    gap: var(--lumo-space-s);
+}
+
+/* Submit — its own prominent button below the writing pad, not part of the
+   command row above it. Capped to the same width as the pad itself so it
+   lines up under it instead of stretching the full (much wider) card. */
+.writing-submit-btn {
+    margin-top: var(--lumo-space-s);
+    max-width: var(--writing-pad-max-width, 360px);
+}
+
+/* -------------------------------------------------------
+   Mobile overrides
+   ------------------------------------------------------- */
+
+@media (max-width: 768px) {
+    .writing-skill-view {
+        padding: var(--lumo-space-s) !important;
+    }
+
+    .writing-skill-workspace {
+        flex-direction: column !important;
+    }
+
+    .writing-skill-practice,
+    .writing-skill-results {
+        width: 100% !important;
+        min-width: unset !important;
+    }
+
+    .writing-skill-target {
+        font-size: 5.5rem !important;
+        margin: var(--lumo-space-s) auto;
+    }
+
+    .writing-skill-preview {
+        width: 120px !important;
+        height: 120px !important;
+        margin: 0 auto;
+        display: block;
+    }
+
+    /* 5 command buttons (Clear/Next Letter/Play audio/Watch Demo/Examples) in a
+       3-column grid wrap to exactly 2 rows instead of one line per button. */
+    .writing-actions {
+        display: grid !important;
+        grid-template-columns: repeat(3, 1fr) !important;
+        gap: var(--lumo-space-xs) !important;
+        width: 100% !important;
+    }
+
+    .writing-actions vaadin-button {
+        width: 100% !important;
+        min-height: 48px !important;
+        font-size: 0.82rem !important;
+        padding: 0 var(--lumo-space-xs) !important;
+    }
+
+    .writing-actions vaadin-button::part(label) {
+        white-space: normal !important;
+        text-align: center !important;
+        line-height: 1.15 !important;
+    }
+
+    .writing-submit-btn {
+        width: 100% !important;
+        max-width: none !important;
+        min-height: 52px !important;
+        font-size: 1.05rem !important;
+        margin-top: var(--lumo-space-m) !important;
+    }
+}
+

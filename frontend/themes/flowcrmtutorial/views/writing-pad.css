@@ -1,0 +1,52 @@
+/* Same overall page width budget as the Writing Skills page
+   (writing-skill.css: .writing-skill-view), so the two pages' canvases end
+   up comparably sized rather than this one being bounded only by the raw
+   browser window width. */
+.writing-pad-view {
+    max-width: 1180px;
+    margin: 0 auto;
+}
+
+/* Same sizing rule as the Writing Skills canvas (writing-skill.css /
+   writing-pad.js): a fixed, phone-sized default, uncapped on desktop so it
+   fills the available width instead — bounded by .writing-pad-view's own
+   max-width above, same as Writing Skills is bounded by .writing-skill-view. */
+.writing-pad-canvas {
+    width: 360px;
+    max-width: 100%;
+}
+
+@media (min-width: 769px) {
+    .writing-pad-canvas {
+        width: 100%;
+        max-width: none;
+    }
+}
+
+/* -------------------------------------------------------
+   Writing Pad — mobile portrait: reclaim space for the canvas
+   The title is redundant with the page's own browser/nav title on a
+   small screen. Hiding it, plus pushing the action buttons further
+   down, frees vertical room that's handed to the canvas instead —
+   an explicit dvh height (rather than the desktop square) so the pad
+   uses much more of the available screen. See scratch-pad.js for how
+   the canvas fills that imposed height instead of staying square.
+   ------------------------------------------------------- */
+
+@media (max-width: 480px) and (orientation: portrait) {
+    .writing-pad-title {
+        display: none !important;
+    }
+
+    .writing-pad-canvas {
+        width: 100% !important;
+        max-width: 100% !important;
+        height: 60dvh !important;
+    }
+
+    .writing-pad-actions {
+        margin-top: 32px !important;
+        width: 100% !important;
+        justify-content: center !important;
+    }
+}

@@ -1,0 +1,86 @@
+/* ============================================================
+   Dashboard view styles  (dashboard.css)
+   ============================================================ */
+
+.dashboard-view {
+    padding: var(--lumo-space-l);
+    max-width: 960px;
+    margin: 0 auto;
+}
+
+/* Base card */
+.dashboard-card {
+    background: var(--lumo-base-color);
+    border: 1px solid var(--lumo-contrast-10pct);
+    border-radius: var(--lumo-border-radius-l);
+    padding: var(--lumo-space-l);
+    box-shadow: var(--lumo-box-shadow-xs);
+    width: 100%;
+    box-sizing: border-box;
+}
+
+/* Welcome banner */
+.welcome-card {
+    background: linear-gradient(135deg,
+        var(--lumo-primary-color-10pct),
+        var(--lumo-contrast-5pct));
+    border-left: 4px solid var(--lumo-primary-color);
+}
+
+/* Stats row */
+.dashboard-stats-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--lumo-space-m);
+    width: 100%;
+}
+
+.stat-card {
+    display: flex;
+    align-items: center;
+    gap: var(--lumo-space-m);
+    flex: 1 1 200px;
+    min-width: 180px;
+}
+
+.stat-card__icon vaadin-icon {
+    width: 36px;
+    height: 36px;
+}
+
+.stat-card__text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.stat-card__value {
+    font-size: var(--lumo-font-size-xxl);
+    font-weight: 700;
+    line-height: 1;
+}
+
+.stat-card__label {
+    font-size: var(--lumo-font-size-s);
+    color: var(--lumo-secondary-text-color);
+}
+
+.stat-card--blue .stat-card__icon { color: var(--lumo-primary-color); }
+.stat-card--green .stat-card__icon { color: var(--lumo-success-color); }
+.stat-card--orange .stat-card__icon { color: var(--lumo-warning-color); }
+
+/* Quick-link launch cards (clickable, navigate to a feature) */
+.quick-link-card {
+    cursor: pointer;
+    transition: box-shadow 0.15s ease, transform 0.15s ease;
+}
+.quick-link-card:hover {
+    box-shadow: var(--lumo-box-shadow-s);
+    transform: translateY(-1px);
+}
+
+/* Coming soon banner */
+.coming-soon-card {
+    border-left: 4px solid var(--lumo-contrast-30pct);
+    background: var(--lumo-contrast-5pct);
+}

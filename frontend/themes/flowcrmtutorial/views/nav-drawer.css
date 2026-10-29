@@ -1,0 +1,48 @@
+/* ============================================================
+   Drawer / SideNav styles  (nav-drawer.css)
+   ============================================================ */
+
+/* Profile card at the top of the drawer */
+.drawer-profile-card {
+    background: var(--lumo-contrast-5pct);
+    padding: var(--lumo-space-m) var(--lumo-space-l);
+    border-bottom: 1px solid var(--lumo-contrast-10pct);
+    box-sizing: border-box;
+}
+
+.drawer-avatar {
+    width: 48px;
+    height: 48px;
+    font-size: var(--lumo-font-size-l);
+    flex-shrink: 0;
+    background: var(--lumo-primary-color);
+    color: var(--lumo-primary-contrast-color);
+}
+
+/* SideNav fills the remaining drawer height */
+.drawer-scroller {
+    flex: 1;
+    overflow-y: auto;
+}
+
+.drawer-sidenav {
+    width: 100%;
+    padding: var(--lumo-space-s) 0;
+}
+
+/* Increase hit area and add subtle hover for nav items — see also game-mode.css */
+
+/* Logout button in navbar */
+.logout-button {
+    flex-shrink: 0;
+}
+
+/* Hamburger button background indicates the logged-in user's role */
+vaadin-drawer-toggle.nav-toggle-admin {
+    background-color: rgba(33, 150, 243, 0.18) !important;
+    border-radius: var(--lumo-border-radius-m) !important;
+}
+vaadin-drawer-toggle.nav-toggle-teacher {
+    background-color: rgba(76, 175, 80, 0.18) !important;
+    border-radius: var(--lumo-border-radius-m) !important;
+}

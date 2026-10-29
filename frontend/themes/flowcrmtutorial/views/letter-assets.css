@@ -1,0 +1,26 @@
+/* -------------------------------------------------------
+   Letter Assets — Record New Demo section
+   The pad and its Record/Stop/Clear/Save Demo button column sit side by
+   side on wider screens (see LetterAssetsView#buildDialogContent). On
+   narrow portrait phones there isn't room for both without shrinking the
+   pad, so stack the buttons below it instead — matches the phone's
+   natural vertical scroll flow and keeps the drawing area full-size.
+   ------------------------------------------------------- */
+
+@media (max-width: 480px) and (orientation: portrait) {
+    /* Vaadin's HorizontalLayout sets flex-direction:row via inline style;
+       !important is required to override it here. */
+    .demo-recorder-row {
+        flex-direction: column !important;
+        align-items: center !important;
+    }
+
+    .demo-recorder-pad {
+        width: 100% !important;
+    }
+
+    .demo-recorder-buttons {
+        width: 100% !important;
+        max-width: 360px !important;
+    }
+}
