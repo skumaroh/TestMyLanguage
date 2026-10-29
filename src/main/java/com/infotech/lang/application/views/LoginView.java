@@ -5,7 +5,6 @@ import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.html.Hr;
 import com.vaadin.flow.component.html.Paragraph;
-import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.login.LoginForm;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.router.BeforeEnterEvent;
@@ -147,11 +146,7 @@ public class LoginView extends VerticalLayout implements BeforeEnterObserver {
 			loginContainer.add(microsoftButton);
 		}
 		
-		if (!hasOAuth) {
-			Span warning = new Span("OAuth providers not configured");
-			warning.getStyle().set("color", "var(--lumo-error-text-color)");
-			loginContainer.add(warning);
-		}
+		// Email and password sign-in is the default; OAuth buttons appear only when configured.
 		
 		add(loginContainer);
 	}

@@ -34,6 +34,7 @@ dependencies {
     // Spring Boot
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
     implementation 'org.springframework.boot:spring-boot-starter-validation'
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
     implementation 'org.springframework.boot:spring-boot-starter-oauth2-client'
     developmentOnly 'org.springframework.boot:spring-boot-devtools'
     
@@ -59,19 +60,8 @@ dependencies {
     // Other
     implementation 'org.checkerframework:checker-qual:3.12.0'
     
-    // Image processing — generates responsive variants (thumb/mobile/tablet/desktop) at upload
-    implementation 'net.coobird:thumbnailator:0.4.20'
 
-    // Pure-JVM MP3 encoder used to transcode validated TTS audio for storage/playback
-    implementation 'de.sciss:jump3r:1.0.5'
 
-    // Circuit breaker around outbound Azure OpenAI/Speech calls (Acceptimico resiliency
-    // milestone) - plain core module, not the spring-boot3 starter, since every existing
-    // *Service test in this package constructs its service under test directly via `new X(...)`
-    // rather than booting a Spring ApplicationContext, so annotation-driven (@CircuitBreaker)
-    // AOP wiring would be invisible to them. The programmatic CircuitBreaker API this codebase
-    // actually uses works identically either way.
-    implementation 'io.github.resilience4j:resilience4j-circuitbreaker:2.4.0'
 
     // Testing
     testImplementation('org.springframework.boot:spring-boot-starter-test') {

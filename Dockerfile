@@ -2,7 +2,7 @@
 FROM eclipse-temurin:21-jdk-alpine
 
 # Copy Gradle-built jar (exclude -plain.jar)
-COPY build/libs/LanguageTool-*-SNAPSHOT.jar /app.jar
+COPY build/libs/TestMyLanguage-*-SNAPSHOT.jar /app.jar
 
 # Default Spring Boot port (can be overridden)
 EXPOSE 8080
