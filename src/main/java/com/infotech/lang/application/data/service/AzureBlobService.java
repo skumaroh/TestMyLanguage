@@ -16,6 +16,7 @@ import org.springframework.stereotype.Service;
 
 import java.io.InputStream;
 import java.time.LocalDateTime;
+import java.time.Duration;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -61,13 +62,18 @@ public class AzureBlobService {
     }
 
     /**
-     * Cheap connectivity check used by the health endpoint: asks Azure whether the container exists.
-     * Returns {@code false} (never throws) when Azure is not configured or the call fails.
+     * Cheap connectivity check used by the health endpoint: asks Azure for the first blob in the container.
+     * This only needs the List permission (a read-and-list SAS cannot call Get Container Properties, which
+     * {@code BlobContainerClient.exists()} uses). Returns {@code true} when the call succeeds, even if the
+     * container is empty, and {@code false} (never throws) when Azure is not configured or the call fails.
      */
     public boolean containerExists(String containerName) {
         if (!isConfigured() || containerName == null || containerName.isBlank()) return false;
         try {
-            return getBlobServiceClient().getBlobContainerClient(containerName).exists();
+            getBlobServiceClient().getBlobContainerClient(containerName)
+                .listBlobs(new ListBlobsOptions().setMaxResultsPerPage(1), Duration.ofSeconds(5))
+                .iterator().hasNext();
+            return true;
         } catch (Exception e) {
             logger.debug("containerExists check failed for {}: {}", containerName, e.getMessage());
             return false;
