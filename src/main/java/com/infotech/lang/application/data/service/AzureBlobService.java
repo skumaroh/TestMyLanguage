@@ -60,6 +60,20 @@ public class AzureBlobService {
         return connectionString != null && !connectionString.isBlank();
     }
 
+    /**
+     * Cheap connectivity check used by the health endpoint: asks Azure whether the container exists.
+     * Returns {@code false} (never throws) when Azure is not configured or the call fails.
+     */
+    public boolean containerExists(String containerName) {
+        if (!isConfigured() || containerName == null || containerName.isBlank()) return false;
+        try {
+            return getBlobServiceClient().getBlobContainerClient(containerName).exists();
+        } catch (Exception e) {
+            logger.debug("containerExists check failed for {}: {}", containerName, e.getMessage());
+            return false;
+        }
+    }
+
     public String getMissingConfigurationMessage() {
         return "Azure Blob Storage is not configured. Local image/audio loading requires "
             + "AZURE_STORAGE_CONNECTION_STRING in .env or azure.storage.connection-string "
