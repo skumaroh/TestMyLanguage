@@ -30,8 +30,8 @@ public class HomeView extends VerticalLayout {
                     LanguageContext languageContext,
                     JdbcTemplate jdbcTemplate,
                     AzureBlobService blobService,
-                    @Value("${hx.blob-check.container:}") String blobContainer,
-                    @Value("${hx.blob-check.blob:}") String blobName) {
+                    @Value("${assessment.blob-check.container:}") String blobContainer,
+                    @Value("${assessment.blob-check.blob:}") String blobName) {
         setAlignItems(Alignment.CENTER);
         getStyle().set("padding-top", "var(--lumo-space-xl)");
 
