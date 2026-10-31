@@ -7,14 +7,12 @@ import com.infotech.lang.application.proctor.ProctorSlot;
 import com.infotech.lang.application.proctor.ProctorTextService;
 import com.infotech.lang.application.proctor.ProctorWarmUp;
 import com.infotech.lang.application.security.SecurityService;
-import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.html.H3;
 import com.vaadin.flow.component.html.Paragraph;
 import com.vaadin.flow.component.html.Span;
-import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
@@ -86,47 +84,43 @@ public class WelcomeView extends VerticalLayout {
         Span source = new Span(resolved.fromMeta() ? "Written by Meta Muse Spark" : "Standard text");
         source.getStyle().set("color", "var(--lumo-secondary-text-color)").set("font-size", "var(--lumo-font-size-s)")
                 .set("margin-right", "var(--lumo-space-m)");
-        Button listen = new Button("Listen (browser voice, not Meta)", e -> speak(resolved.text()));
-        card.add(source, listen);
+        Button listen = new Button("Listen (browser voice, not Meta)");
+        Span voiceNote = new Span();
+        voiceNote.getStyle().set("display", "block").set("color", "var(--lumo-secondary-text-color)")
+                .set("font-size", "var(--lumo-font-size-s)").set("margin-top", "var(--lumo-space-xs)");
+        attachSpeech(listen, voiceNote, resolved.text());
+        card.add(source, listen, voiceNote);
         return card;
     }
 
-    private void speak(String text) {
+    /**
+     * The click is handled in the browser, not on the server: speech must start inside the click itself
+     * (some browsers refuse it after a server round trip), and it keeps working if the live connection is slow.
+     */
+    private void attachSpeech(Button listen, Span voiceNote, String text) {
         String[] parts = text.split("\n");
         String[] languages = new String[parts.length];
         for (int i = 0; i < parts.length; i++) {
             languages[i] = i == 0 ? "en-US" : speechTag(testedLanguage);
         }
-        UI.getCurrent().getPage().executeJs(
-                "if (!('speechSynthesis' in window)) { return 'unsupported'; }"
-                        + "const parts = $0; const langs = $1; const synth = window.speechSynthesis;"
-                        // Browsers load their voice list late; wait briefly for it before choosing voices.
-                        + "const voicesReady = new Promise(resolve => {"
-                        + " if (synth.getVoices().length > 0) { resolve(); return; }"
-                        + " synth.addEventListener('voiceschanged', () => resolve(), { once: true });"
-                        + " setTimeout(resolve, 1500); });"
-                        + "return voicesReady.then(() => new Promise(done => {"
+        listen.getElement().executeJs(
+                "const parts = $0, langs = $1, note = $2, label = $3; const synth = window.speechSynthesis;"
+                        + "if (!synth) { note.textContent = 'This browser cannot read text aloud.'; return; }"
+                        // asking for the list early makes the browser start loading its voices
+                        + "synth.getVoices();"
+                        + "this.addEventListener('click', () => {"
                         + " const voices = synth.getVoices(); let missing = false;"
                         + " synth.cancel(); synth.resume();"
-                        // a short pause after cancel() stops Chrome from dropping the first utterance
-                        + " setTimeout(() => {"
-                        + "  parts.forEach((t, i) => { const u = new SpeechSynthesisUtterance(t); u.lang = langs[i];"
-                        + "   const lang = langs[i].toLowerCase(); const base = lang.split('-')[0];"
-                        + "   const v = voices.find(x => x.lang.toLowerCase().replace('_', '-') === lang)"
-                        + "     || voices.find(x => x.lang.toLowerCase().replace('_', '-').startsWith(base));"
-                        + "   if (v) { u.voice = v; } else if (i > 0) { missing = true; }"
-                        + "   synth.speak(u); });"
-                        + "  done(missing ? 'novoice' : 'ok'); }, 60); }));", parts, languages)
-                .then(String.class, result -> {
-                    if ("unsupported".equals(result)) {
-                        Notification.show("Your browser cannot read text aloud.");
-                    } else if ("novoice".equals(result)) {
-                        Notification.show("This device has no " + testedLanguage
-                                + " voice installed, so only the English part can be read. "
-                                + "Add one in the device's speech or language settings.", 8000,
-                                Notification.Position.MIDDLE);
-                    }
-                });
+                        + " parts.forEach((t, i) => { const u = new SpeechSynthesisUtterance(t); u.lang = langs[i];"
+                        + "  const lang = langs[i].toLowerCase(); const base = lang.split('-')[0];"
+                        + "  const v = voices.find(x => x.lang.toLowerCase().replace('_', '-') === lang)"
+                        + "   || voices.find(x => x.lang.toLowerCase().replace('_', '-').startsWith(base));"
+                        + "  if (v) { u.voice = v; } else if (i > 0) { missing = true; }"
+                        + "  synth.speak(u); });"
+                        + " note.textContent = missing ? 'This device has no ' + label + ' voice installed, so only the English part is read. '"
+                        + "  + 'Add one in the device speech or language settings.' : '';"
+                        + "});",
+                parts, languages, voiceNote.getElement(), testedLanguage);
     }
 
     private static String speechTag(String testedLanguage) {
