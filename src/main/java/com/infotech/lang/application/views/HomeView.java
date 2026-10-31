@@ -10,9 +10,11 @@ import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
+import com.vaadin.flow.router.RouterLink;
 import jakarta.annotation.security.PermitAll;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 
 /**
@@ -44,8 +46,19 @@ public class HomeView extends VerticalLayout {
         add(statusRow("PostgreSQL", checkDatabase(jdbcTemplate)));
         add(statusRow("Blob Storage", checkBlob(blobService, blobContainer, blobName)));
 
+        add(new RouterLink("Start: welcome and activity introductions", WelcomeView.class));
+        if (isAdmin()) {
+            add(new RouterLink("Admin: review the proctor texts", ProctorReviewView.class));
+        }
+
         Button logout = new Button("Sign out", e -> securityService.logout());
         add(logout);
+    }
+
+    private static boolean isAdmin() {
+        var authentication = SecurityContextHolder.getContext().getAuthentication();
+        return authentication != null && authentication.getAuthorities().stream()
+                .anyMatch(a -> "ROLE_ADMIN".equals(a.getAuthority()));
     }
 
     private static String checkDatabase(JdbcTemplate jdbcTemplate) {
