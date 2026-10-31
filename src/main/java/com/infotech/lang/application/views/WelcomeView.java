@@ -108,7 +108,7 @@ public class WelcomeView extends VerticalLayout {
                         + " const voices = synth.getVoices(); let missing = false;"
                         + " synth.cancel(); synth.resume();"
                         + " parts.forEach((t, i) => { const tag = i === 0 ? 'en-US' : testedTag;"
-                        + "  const u = new SpeechSynthesisUtterance(t); u.lang = tag;"
+                        + "  const u = new SpeechSynthesisUtterance(t); u.lang = tag; u.rate = 0.8;"
                         + "  const lang = tag.toLowerCase(); const base = lang.split('-')[0];"
                         + "  const v = voices.find(x => x.lang.toLowerCase().replace('_', '-') === lang)"
                         + "   || voices.find(x => x.lang.toLowerCase().replace('_', '-').startsWith(base));"
