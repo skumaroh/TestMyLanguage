@@ -16,6 +16,15 @@ The pre-existing code is listed in `PRE_EXISTING.md` and is the first commit, ta
 | `.github/workflows/build-push-ghcr.yml` | Builds the image and pushes it to GitHub Container Registry |
 | `.env.example`, `README.md`, this file | Documentation |
 
+## Task 1: Meta-written proctor texts
+
+| Item | What it is |
+| --- | --- |
+| `ai/` (`MetaAiGateway`) | The only code that calls the Meta Model API (Muse Spark); every call is logged without prompts, answers or keys |
+| `proctor/` | Text service, validator, prompt, built-in fallbacks and background warm-up for the greeting and five activity introductions |
+| `WelcomeView`, `ProctorReviewView` | The student's welcome page (with a browser-voice Listen button, labeled not Meta) and the admin page to approve, edit or discard texts |
+| Tables | `assess_proctor_text`, `assess_ai_call_log`: see `docs/DATABASE.md`. Migrations are in the private `LanguageToolDBScripts` repository |
+
 ## Planned (not yet built)
 
 Assessment engine and state machine, five activities, Meta model gateway (Muse Spark, Muse Voice Transcribe), semantic grading,
