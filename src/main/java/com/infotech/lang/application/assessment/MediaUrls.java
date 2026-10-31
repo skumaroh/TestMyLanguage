@@ -22,7 +22,11 @@ public final class MediaUrls {
         if (parts.length < 5 || parts[3].isBlank() || parts[4].isBlank()) {
             return null;
         }
-        String blobPath = URLDecoder.decode(parts[4], StandardCharsets.UTF_8);
+        return forBlob(kind, parts[3], URLDecoder.decode(parts[4], StandardCharsets.UTF_8));
+    }
+
+    /** The proxy address of a blob given its container and (already decoded) path inside the container. */
+    public static String forBlob(String kind, String container, String blobPath) {
         StringBuilder encoded = new StringBuilder();
         for (String segment : blobPath.split("/")) {
             if (encoded.length() > 0) {
@@ -30,6 +34,6 @@ public final class MediaUrls {
             }
             encoded.append(URLEncoder.encode(segment, StandardCharsets.UTF_8).replace("+", "%20"));
         }
-        return "/api/media/" + kind + "/" + parts[3] + "/" + encoded;
+        return "/api/media/" + kind + "/" + container + "/" + encoded;
     }
 }

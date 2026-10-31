@@ -25,4 +25,10 @@ class MediaUrlsTest {
         assertNull(MediaUrls.proxyUrl("audio", "  "));
         assertNull(MediaUrls.proxyUrl("audio", "https://acct.blob.core.windows.net/language-tool-audio"));
     }
+
+    @Test
+    void buildsTheProxyAddressFromContainerAndBlobPath() {
+        assertEquals("/api/media/audio/language-tool-audio/audio/tamil/20260507_u0B95.mp3",
+                MediaUrls.forBlob("audio", "language-tool-audio", "audio/tamil/20260507_u0B95.mp3"));
+    }
 }
