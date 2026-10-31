@@ -1,6 +1,7 @@
 package com.infotech.lang.application.views;
 
 import com.infotech.lang.application.assessment.AssessBlockResult;
+import com.infotech.lang.application.assessment.AssessmentMediaService;
 import com.infotech.lang.application.assessment.AssessmentService;
 import com.infotech.lang.application.assessment.BlockEngine;
 import com.infotech.lang.application.assessment.MediaUrls;
@@ -44,6 +45,8 @@ public class WordsBlockView extends VerticalLayout {
     private static final int LEVEL = 1;
 
     private final AssessmentService assessment;
+    private final AssessmentMediaService media;
+    private final String language;
     private final BlockEngine engine = new BlockEngine();
     private final StringBuilder built = new StringBuilder();
 
@@ -58,8 +61,11 @@ public class WordsBlockView extends VerticalLayout {
                           UserRepository userRepository,
                           WordQuestionService wordQuestions,
                           AssessmentService assessment,
+                          AssessmentMediaService media,
                           LanguageContext languageContext) {
         this.assessment = assessment;
+        this.media = media;
+        this.language = languageContext.getLanguage();
         setAlignItems(Alignment.CENTER);
         setMaxWidth("720px");
         getStyle().set("margin", "0 auto");
@@ -74,7 +80,7 @@ public class WordsBlockView extends VerticalLayout {
                 showMessage("There are no words ready for this level yet.");
                 return;
             }
-            var attempt = assessment.startAttempt(userId, languageContext.getLanguage(), LEVEL);
+            var attempt = assessment.startAttempt(userId, language, LEVEL);
             block = assessment.startBlock(attempt.getId(), BLOCK_CODE, 1);
             showQuestion();
         } catch (RuntimeException e) {
@@ -127,6 +133,12 @@ public class WordsBlockView extends VerticalLayout {
                 answerField.setValue(built.toString());
             });
             button.getStyle().set("font-size", "1.4em").set("min-width", "3em");
+            media.letterAudioBlob(language, tile).ifPresent(blob -> button.getElement().executeJs(
+                    // The letter's sound starts inside the tap itself in the browser
+                    "const url = $0; let audio = null;"
+                            + "this.addEventListener('click', () => { if (audio) { audio.pause(); }"
+                            + " audio = new Audio(url); audio.play(); });",
+                    MediaUrls.forBlob("audio", AssessmentMediaService.AUDIO_CONTAINER, blob)));
             tiles.add(button);
         }
         add(tiles);
