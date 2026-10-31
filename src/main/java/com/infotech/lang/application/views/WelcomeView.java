@@ -98,21 +98,18 @@ public class WelcomeView extends VerticalLayout {
      * (some browsers refuse it after a server round trip), and it keeps working if the live connection is slow.
      */
     private void attachSpeech(Button listen, Span voiceNote, String text) {
-        String[] parts = text.split("\n");
-        String[] languages = new String[parts.length];
-        for (int i = 0; i < parts.length; i++) {
-            languages[i] = i == 0 ? "en-US" : speechTag(testedLanguage);
-        }
+        // Only plain strings are passed to the browser (Vaadin cannot encode Java arrays); the browser splits the text.
         listen.getElement().executeJs(
-                "const parts = $0, langs = $1, note = $2, label = $3; const synth = window.speechSynthesis;"
+                "const parts = $0.split('\\n'), testedTag = $1, note = $2, label = $3; const synth = window.speechSynthesis;"
                         + "if (!synth) { note.textContent = 'This browser cannot read text aloud.'; return; }"
                         // asking for the list early makes the browser start loading its voices
                         + "synth.getVoices();"
                         + "this.addEventListener('click', () => {"
                         + " const voices = synth.getVoices(); let missing = false;"
                         + " synth.cancel(); synth.resume();"
-                        + " parts.forEach((t, i) => { const u = new SpeechSynthesisUtterance(t); u.lang = langs[i];"
-                        + "  const lang = langs[i].toLowerCase(); const base = lang.split('-')[0];"
+                        + " parts.forEach((t, i) => { const tag = i === 0 ? 'en-US' : testedTag;"
+                        + "  const u = new SpeechSynthesisUtterance(t); u.lang = tag;"
+                        + "  const lang = tag.toLowerCase(); const base = lang.split('-')[0];"
                         + "  const v = voices.find(x => x.lang.toLowerCase().replace('_', '-') === lang)"
                         + "   || voices.find(x => x.lang.toLowerCase().replace('_', '-').startsWith(base));"
                         + "  if (v) { u.voice = v; } else if (i > 0) { missing = true; }"
@@ -120,7 +117,7 @@ public class WelcomeView extends VerticalLayout {
                         + " note.textContent = missing ? 'This device has no ' + label + ' voice installed, so only the English part is read. '"
                         + "  + 'Add one in the device speech or language settings.' : '';"
                         + "});",
-                parts, languages, voiceNote.getElement(), testedLanguage);
+                text, speechTag(testedLanguage), voiceNote.getElement(), testedLanguage);
     }
 
     private static String speechTag(String testedLanguage) {
