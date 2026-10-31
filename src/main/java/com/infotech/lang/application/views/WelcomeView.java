@@ -98,14 +98,33 @@ public class WelcomeView extends VerticalLayout {
             languages[i] = i == 0 ? "en-US" : speechTag(testedLanguage);
         }
         UI.getCurrent().getPage().executeJs(
-                "if (!('speechSynthesis' in window)) { return false; }"
-                        + "const parts = $0; const langs = $1; window.speechSynthesis.cancel();"
-                        + "parts.forEach((t, i) => { const u = new SpeechSynthesisUtterance(t); u.lang = langs[i];"
-                        + " window.speechSynthesis.speak(u); });"
-                        + "return true;", parts, languages)
-                .then(Boolean.class, supported -> {
-                    if (!Boolean.TRUE.equals(supported)) {
+                "if (!('speechSynthesis' in window)) { return 'unsupported'; }"
+                        + "const parts = $0; const langs = $1; const synth = window.speechSynthesis;"
+                        // Browsers load their voice list late; wait briefly for it before choosing voices.
+                        + "const voicesReady = new Promise(resolve => {"
+                        + " if (synth.getVoices().length > 0) { resolve(); return; }"
+                        + " synth.addEventListener('voiceschanged', () => resolve(), { once: true });"
+                        + " setTimeout(resolve, 1500); });"
+                        + "return voicesReady.then(() => new Promise(done => {"
+                        + " const voices = synth.getVoices(); let missing = false;"
+                        + " synth.cancel(); synth.resume();"
+                        // a short pause after cancel() stops Chrome from dropping the first utterance
+                        + " setTimeout(() => {"
+                        + "  parts.forEach((t, i) => { const u = new SpeechSynthesisUtterance(t); u.lang = langs[i];"
+                        + "   const lang = langs[i].toLowerCase(); const base = lang.split('-')[0];"
+                        + "   const v = voices.find(x => x.lang.toLowerCase().replace('_', '-') === lang)"
+                        + "     || voices.find(x => x.lang.toLowerCase().replace('_', '-').startsWith(base));"
+                        + "   if (v) { u.voice = v; } else if (i > 0) { missing = true; }"
+                        + "   synth.speak(u); });"
+                        + "  done(missing ? 'novoice' : 'ok'); }, 60); }));", parts, languages)
+                .then(String.class, result -> {
+                    if ("unsupported".equals(result)) {
                         Notification.show("Your browser cannot read text aloud.");
+                    } else if ("novoice".equals(result)) {
+                        Notification.show("This device has no " + testedLanguage
+                                + " voice installed, so only the English part can be read. "
+                                + "Add one in the device's speech or language settings.", 8000,
+                                Notification.Position.MIDDLE);
                     }
                 });
     }
