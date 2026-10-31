@@ -62,6 +62,7 @@ public class WelcomeView extends VerticalLayout {
                 + "The Listen button uses your browser's voice (not Meta).");
         note.getStyle().set("color", "var(--lumo-secondary-text-color)").set("font-size", "var(--lumo-font-size-s)");
         add(note);
+        add(new Button("Start the assessment", e -> getUI().ifPresent(ui -> ui.navigate("assessment/words"))));
     }
 
     private Div card(String heading, ProctorSlot slot, String name) {
