@@ -101,6 +101,8 @@ public class WelcomeView extends VerticalLayout {
         // Only plain strings are passed to the browser (Vaadin cannot encode Java arrays); the browser splits the text.
         listen.getElement().executeJs(
                 "const parts = $0.split('\\n'), testedTag = $1, note = $2, label = $3; const synth = window.speechSynthesis;"
+                        // Safari reads English too fast; slow only the English part, and only there
+                        + "const slowEnglish = /^((?!chrome|android|crios|fxios|edg).)*safari/i.test(navigator.userAgent);"
                         + "if (!synth) { note.textContent = 'This browser cannot read text aloud.'; return; }"
                         // asking for the list early makes the browser start loading its voices
                         + "synth.getVoices();"
@@ -108,7 +110,7 @@ public class WelcomeView extends VerticalLayout {
                         + " const voices = synth.getVoices(); let missing = false;"
                         + " synth.cancel(); synth.resume();"
                         + " parts.forEach((t, i) => { const tag = i === 0 ? 'en-US' : testedTag;"
-                        + "  const u = new SpeechSynthesisUtterance(t); u.lang = tag; u.rate = 0.8;"
+                        + "  const u = new SpeechSynthesisUtterance(t); u.lang = tag; if (slowEnglish && i === 0) { u.rate = 0.8; }"
                         + "  const lang = tag.toLowerCase(); const base = lang.split('-')[0];"
                         + "  const v = voices.find(x => x.lang.toLowerCase().replace('_', '-') === lang)"
                         + "   || voices.find(x => x.lang.toLowerCase().replace('_', '-').startsWith(base));"
