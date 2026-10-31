@@ -48,14 +48,14 @@ public class WelcomeView extends VerticalLayout {
         setMaxWidth("720px");
         getStyle().set("margin", "0 auto");
 
-        String firstName = firstNameOf(securityService, userRepository);
+        String name = greetingNameOf(securityService, userRepository);
         String proctorLanguage = textService.proctorLanguage();
 
         add(new H2("Welcome"));
-        add(card(null, ProctorSlot.greeting(level, proctorLanguage), firstName));
+        add(card(null, ProctorSlot.greeting(level, proctorLanguage), name));
         for (ProctorActivity activity : ProctorActivity.values()) {
             if (activity != ProctorActivity.NONE) {
-                add(card(activity.getLabel(), ProctorSlot.intro(activity, level, proctorLanguage), firstName));
+                add(card(activity.getLabel(), ProctorSlot.intro(activity, level, proctorLanguage), name));
             }
         }
         Span note = new Span("Texts written by Meta Muse Spark and approved by an administrator. "
@@ -64,8 +64,8 @@ public class WelcomeView extends VerticalLayout {
         add(note);
     }
 
-    private Div card(String heading, ProctorSlot slot, String firstName) {
-        ProctorTextService.ResolvedText resolved = textService.resolve(slot, firstName);
+    private Div card(String heading, ProctorSlot slot, String name) {
+        ProctorTextService.ResolvedText resolved = textService.resolve(slot, name);
         if (!resolved.fromMeta()) {
             warmUp.requestGenerationIfNeeded(slot);
         }
@@ -132,13 +132,23 @@ public class WelcomeView extends VerticalLayout {
         return "en-US";
     }
 
-    private static String firstNameOf(SecurityService securityService, UserRepository userRepository) {
+    /** The name the student chose to be called (display name), then the first name; never the short login id. */
+    private static String preferredName(User user) {
+        String display = user.getDisplayName();
+        if (display != null && !display.isBlank()) {
+            return display.trim();
+        }
+        String first = user.getFirstName();
+        return first == null ? "" : first.trim();
+    }
+
+    private static String greetingNameOf(SecurityService securityService, UserRepository userRepository) {
         UserDetails user = securityService.getAuthenticatedUser();
         if (user == null) {
             return "";
         }
         return userRepository.findByEmailIgnoreCase(user.getUsername())
-                .map(User::getFirstName)
+                .map(WelcomeView::preferredName)
                 .orElse("");
     }
 }
