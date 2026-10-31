@@ -57,7 +57,7 @@ class BlockEngineTest {
 
     @Test
     void fiveOfEightFailsButEndsAtEight() {
-        BlockEngine engine = answered(true, false, true, false, true, true, false, false);
+        BlockEngine engine = answered(true, false, true, false, true, true, true, false);
         assertTrue(engine.isComplete());
         assertFalse(engine.passed());
         assertEquals(8, engine.asked());
@@ -97,7 +97,7 @@ class BlockEngineTest {
     @Test
     void levelPassesOnOverallPercentNotOnBlocks() {
         BlockEngine passed = answered(true, true, true, true);
-        BlockEngine failed = answered(true, false, true, false, true, true, false, false); // 5 of 8
+        BlockEngine failed = answered(true, false, true, false, true, true, true, false); // 5 of 8
         List<BlockEngine> blocks = List.of(passed, failed);
         assertEquals(9, LevelScore.totalCorrect(blocks));
         assertEquals(12, LevelScore.totalAsked(blocks));
@@ -107,7 +107,7 @@ class BlockEngineTest {
 
     @Test
     void levelFailsBelowSeventyFivePercent() {
-        BlockEngine failed = answered(true, false, true, false, true, true, false, false); // 5 of 8
+        BlockEngine failed = answered(true, false, true, false, true, true, true, false); // 5 of 8
         assertFalse(LevelScore.passed(List.of(failed)));
         assertEquals(62.5, LevelScore.percent(List.of(failed)), 0.001);
     }
