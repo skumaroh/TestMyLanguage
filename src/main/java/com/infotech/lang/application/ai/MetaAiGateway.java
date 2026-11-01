@@ -66,7 +66,7 @@ public class MetaAiGateway implements AiGateway {
         long started = System.nanoTime();
         try {
             HttpRequest httpRequest = HttpRequest.newBuilder(URI.create(baseUrl + "/chat/completions"))
-                    .timeout(Duration.ofSeconds(timeoutSeconds))
+                    .timeout(Duration.ofSeconds(request.timeoutSeconds() != null ? request.timeoutSeconds() : timeoutSeconds))
                     .header("Authorization", "Bearer " + apiKey)
                     .header("Content-Type", "application/json")
                     .POST(HttpRequest.BodyPublishers.ofString(buildBody(request)))
