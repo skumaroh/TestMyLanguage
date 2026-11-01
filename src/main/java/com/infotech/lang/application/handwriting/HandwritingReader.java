@@ -83,4 +83,73 @@ public class HandwritingReader {
         schema.put("additionalProperties", false);
         return schema;
     }
+
+    /** Meta's answer to "which of these letters is it?": a confidence for each option it named (only options we offered). */
+    public record Choice(boolean ok, Map<String, Double> confidences, long latencyMs, String error) {
+        static Choice failed(long latencyMs, String error) {
+            return new Choice(false, Map.of(), latencyMs, error);
+        }
+
+        /** The option with the highest confidence, or "" when there is none. */
+        public String best() {
+            return confidences.entrySet().stream().max(Map.Entry.comparingByValue()).map(Map.Entry::getKey).orElse("");
+        }
+    }
+
+    /** Asks the model to pick from {@code options} (a short list of letters, including the expected one). Never throws. */
+    public Choice choose(byte[] drawingPng, String language, List<String> options) {
+        AiResult result = gateway.completeJson(
+                new AiRequest("HANDWRITING_CHOOSE", SYSTEM, choiceTask(language, options), choiceSchema(), drawingPng));
+        if (!result.ok()) {
+            return Choice.failed(result.latencyMs(), result.error());
+        }
+        return parseChoices(result.content(), options, result.latencyMs());
+    }
+
+    Choice parseChoices(String json, List<String> options, long latencyMs) {
+        try {
+            Map<String, Double> confidences = new LinkedHashMap<>();
+            for (JsonNode item : mapper.readTree(json).path("choices")) {
+                String character = item.path("character").asText("").trim();
+                double confidence = Math.max(0, Math.min(1, item.path("confidence").asDouble(0)));
+                if (options.contains(character)) {
+                    confidences.merge(character, confidence, Math::max);
+                }
+            }
+            return new Choice(true, confidences, latencyMs, null);
+        } catch (Exception e) {
+            return Choice.failed(latencyMs, "unreadable answer");
+        }
+    }
+
+    static String choiceTask(String language, List<String> options) {
+        String script = "hindi".equalsIgnoreCase(language) ? "Hindi (Devanagari script)" : "Tamil script";
+        return "The picture shows one handwritten character in " + script + ", drawn by a learner with a finger or mouse "
+                + "on a plain background. It is exactly one of these characters: " + String.join(" ", options)
+                + ". Look closely at the strokes: some of these characters differ only by a small extra stroke, loop or mark. "
+                + "For each of these characters give a confidence from 0 to 1 that it is the one drawn; the confidences "
+                + "should add up to about 1. Only use characters from the list.";
+    }
+
+    static Map<String, Object> choiceSchema() {
+        Map<String, Object> itemProperties = new LinkedHashMap<>();
+        itemProperties.put("character", Map.of("type", "string"));
+        itemProperties.put("confidence", Map.of("type", "number"));
+        Map<String, Object> item = new LinkedHashMap<>();
+        item.put("type", "object");
+        item.put("properties", itemProperties);
+        item.put("required", List.of("character", "confidence"));
+        item.put("additionalProperties", false);
+        Map<String, Object> choices = new LinkedHashMap<>();
+        choices.put("type", "array");
+        choices.put("items", item);
+        Map<String, Object> properties = new LinkedHashMap<>();
+        properties.put("choices", choices);
+        Map<String, Object> schema = new LinkedHashMap<>();
+        schema.put("type", "object");
+        schema.put("properties", properties);
+        schema.put("required", List.of("choices"));
+        schema.put("additionalProperties", false);
+        return schema;
+    }
 }
