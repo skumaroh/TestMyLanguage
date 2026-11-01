@@ -46,6 +46,14 @@ function longest(table, text, i) {
 
 // One word of English letters -> one word of the language ('tamil' or 'hindi').
 function convertWord(raw, language) {
+  if (language !== 'hindi') {
+    // the Tamil plural ending -கள் (typed "kal", "gal", "ngal") is spelled with ள், which letter rules alone cannot guess
+    const plural = /^(.{2,}?)(n?)(k|g)al$/i.exec(raw);
+    if (plural) {
+      const stem = plural[1];
+      return convertWord(stem, language) + (plural[2] ? 'ங்கள்' : 'கள்');
+    }
+  }
   const rules = language === 'hindi' ? HINDI : TAMIL;
   // a capital first letter is just sentence case, not the special capital letters (N, T, ...)
   const text = raw.charAt(0).toLowerCase() + raw.slice(1);

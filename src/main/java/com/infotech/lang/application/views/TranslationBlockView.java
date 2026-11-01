@@ -256,11 +256,14 @@ public class TranslationBlockView extends VerticalLayout {
             }
             boolean graderFailed = grade.verdict() == TranslationVerdict.ERROR;
             String mode = tiles ? "TILES " : (usedSuggestion ? "SPELLING-HELP " : "");
-            String log = (graderFailed ? "FLAG grader unavailable: " : "") + mode + given + " [" + grade.verdict() + "]";
+            String spellingNote = grade.hasSpellingNote()
+                    ? " {SPELLING " + grade.spelling() + (grade.corrected().isBlank() ? "" : ": " + grade.corrected()) + "}" : "";
+            String log = (graderFailed ? "FLAG grader unavailable: " : "") + mode + given + " [" + grade.verdict() + "]" + spellingNote;
             int duration = (int) Math.min(Integer.MAX_VALUE, System.currentTimeMillis() - shownAtMillis);
             assessment.recordAnswer(block.getId(), engine.asked() + 1, "sentence:" + current.id(), log, grade.correct(), duration);
             AdminFeedback.show(grade.correct(), mode + grade.verdict()
-                    + (grade.usedModel() ? " (Meta: " + grade.reason() + ")" : " (exact match)"));
+                    + (grade.usedModel() ? " (Meta: " + grade.reason() + ")" : " (exact match)")
+                    + (grade.hasSpellingNote() ? " – spelling: " + grade.spelling() + " → " + grade.corrected() : ""));
             engine.record(grade.correct());
             if (engine.isComplete()) {
                 assessment.finishBlock(block.getId(), engine.asked(), engine.correct(), engine.passed());

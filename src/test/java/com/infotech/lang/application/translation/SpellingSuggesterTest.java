@@ -48,8 +48,9 @@ class SpellingSuggesterTest {
 
     @Test
     void thePromptNeverContainsTheEnglishSentence() {
-        String task = SpellingSuggester.task("tamil", "naan oru maanavan");
+        String task = SpellingSuggester.task("tamil", "naan oru maanavan", "நான் ஒரு மானவன்");
         assertTrue(task.contains("<<<TEXT\nnaan oru maanavan\nTEXT>>>"));
         assertTrue(task.contains("do not translate"));
+        assertTrue(task.contains("நான் ஒரு மானவன்"));
     }
 }
