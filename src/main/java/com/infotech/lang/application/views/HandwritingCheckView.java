@@ -9,6 +9,7 @@ import com.infotech.lang.application.handwriting.LetterCandidate;
 import com.infotech.lang.application.handwriting.ReferenceImages;
 import com.infotech.lang.application.handwriting.ShapeRanking;
 import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.checkbox.Checkbox;
 import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.html.Image;
 import com.vaadin.flow.component.html.Paragraph;
@@ -51,6 +52,7 @@ public class HandwritingCheckView extends VerticalLayout {
     private final TextField expected = new TextField("The letter you meant to draw");
     private final Paragraph result = new Paragraph("Draw one character, then press Check.");
     private final Pre details = new Pre();
+    private final Checkbox askMeta = new Checkbox("Also ask Meta (slow: 10 to 25 seconds)", false);
     private final Image sent = new Image();
     private final Image reference = new Image();
 
@@ -80,7 +82,7 @@ public class HandwritingCheckView extends VerticalLayout {
                 new Paragraph("Three results per drawing: the combined check (old shape comparison weighs more, plus Meta "
                         + "reading blind), the old shape comparison against every letter of the same group, and Meta choosing "
                         + "among those letters. Nothing is stored except model-call log rows. A check takes several seconds."),
-                expected, pad, new HorizontalLayout(clear, checkButton), result, new Paragraph("The picture that was sent, and the reference image of the letter you meant:"),
+                expected, askMeta, pad, new HorizontalLayout(clear, checkButton), result, new Paragraph("The picture that was sent, and the reference image of the letter you meant:"),
                 new HorizontalLayout(sent, reference), details);
     }
 
@@ -116,21 +118,30 @@ public class HandwritingCheckView extends VerticalLayout {
             options.add(meant);
         }
 
-        CompletableFuture<CombinedHandwritingCheck.Result> combinedFuture =
-                CompletableFuture.supplyAsync(() -> check.check(png, language, meant));
-        CompletableFuture<HandwritingReader.Choice> choiceFuture = options.size() < 2
+        boolean withMeta = askMeta.getValue();
+        if (!withMeta) {
+            Double only = ranked.stream().filter(x -> x.letter().equals(meant)).map(ShapeRanking.Ranked::score).findFirst().orElse(null);
+            result.setText("Old shape comparison for the letter you meant: "
+                    + (only == null ? "none (no reference image)" : String.format(Locale.ROOT, "%.2f", only))
+                    + ". Meta was not asked (tick the box to ask it).");
+        }
+        CompletableFuture<CombinedHandwritingCheck.Result> combinedFuture = !withMeta ? CompletableFuture.completedFuture(null)
+                : CompletableFuture.supplyAsync(() -> check.check(png, language, meant));
+        CompletableFuture<HandwritingReader.Choice> choiceFuture = !withMeta || options.size() < 2
                 ? CompletableFuture.completedFuture(null)
                 : CompletableFuture.supplyAsync(() -> reader.choose(png, language, options));
         CombinedHandwritingCheck.Result r = combinedFuture.join();
         HandwritingReader.Choice choice = choiceFuture.join();
 
-        String local = r.localScore() == null ? "none (no reference image)" : String.format(Locale.ROOT, "%.2f", r.localScore());
-        String meta = r.metaAnswered()
-                ? String.format(Locale.ROOT, "read \"%s\", confidence %.2f, counted %.2f", r.metaRead(), r.metaConfidence(), r.metaScore())
-                : "no answer";
-        String combined = r.combined() == null ? "none" : String.format(Locale.ROOT, "%.2f", r.combined());
-        result.setText("Combined check: old shape comparison " + local + "; Meta (blind) " + meta + " (" + r.metaMs()
-                + " ms); combined " + combined + ". " + r.note());
+        if (r != null) {
+            String local = r.localScore() == null ? "none (no reference image)" : String.format(Locale.ROOT, "%.2f", r.localScore());
+            String meta = r.metaAnswered()
+                    ? String.format(Locale.ROOT, "read \"%s\", confidence %.2f, counted %.2f", r.metaRead(), r.metaConfidence(), r.metaScore())
+                    : "no answer";
+            String combined = r.combined() == null ? "none" : String.format(Locale.ROOT, "%.2f", r.combined());
+            result.setText("Combined check: old shape comparison " + local + "; Meta (blind) " + meta + " (" + r.metaMs()
+                    + " ms); combined " + combined + ". " + r.note());
+        }
 
         StringBuilder text = new StringBuilder();
         if (options.size() < 2) {
@@ -139,8 +150,16 @@ public class HandwritingCheckView extends VerticalLayout {
             text.append("Old shape comparison against ").append(ranked.size()).append(" letters of the group (best first):\n");
             ranked.stream().limit(6).forEach(x -> text.append(String.format(Locale.ROOT, "  %s  %.2f%s%n", x.letter(), x.score(),
                     x.letter().equals(meant) ? "   <- the letter you meant" : "")));
+            for (int i = 6; i < ranked.size(); i++) {
+                if (ranked.get(i).letter().equals(meant)) {
+                    text.append(String.format(Locale.ROOT, "  ... %s  %.2f   <- the letter you meant, number %d of %d%n", meant,
+                            ranked.get(i).score(), i + 1, ranked.size()));
+                }
+            }
             text.append(String.format(Locale.ROOT, "  best: %s, lead over the second: %.2f%n%n", ranked.get(0).letter(), ShapeRanking.margin(ranked)));
-            if (choice == null || !choice.ok()) {
+            if (!withMeta) {
+                text.append("Meta was not asked.\n");
+            } else if (choice == null || !choice.ok()) {
                 text.append("Meta choosing among the letters: no answer").append(choice == null ? "" : " (" + choice.error() + ")").append('\n');
             } else {
                 text.append("Meta choosing among the old method's best ").append(options.size()).append(" (").append(String.join(" ", options))
