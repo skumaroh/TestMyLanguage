@@ -97,6 +97,10 @@ public class ConversationLibrary {
         if (Conversation.RETIRED.equals(c.getStatus())) {
             throw new IllegalStateException("A retired conversation cannot be verified.");
         }
+        if (objectives.findByConversationIdOrderByPosition(id).size() != ConversationGenerator.OBJECTIVES) {
+            throw new IllegalStateException("This conversation does not have all " + ConversationGenerator.OBJECTIVES
+                    + " objectives, so it cannot be verified. Retire it and write a new one.");
+        }
         c.markVerified(by);
         conversations.save(c);
     }
