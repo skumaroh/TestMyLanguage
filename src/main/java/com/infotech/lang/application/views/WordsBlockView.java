@@ -100,6 +100,12 @@ public class WordsBlockView extends VerticalLayout {
             add(new Paragraph(current.prompt()));
         }
         String imageSrc = MediaUrls.proxyUrl("image", current.imageUrl());
+        if (imageSrc == null) {
+            // most words have no saved picture address: the old game then looks the picture up by the word's name
+            imageSrc = media.imageBlobForWord(current.prompt())
+                    .map(blob -> MediaUrls.forBlob("image", AssessmentMediaService.IMAGE_CONTAINER, blob))
+                    .orElse(null);
+        }
         if (imageSrc != null) {
             Image image = new Image(imageSrc, "");
             image.getStyle().set("max-height", "220px").set("max-width", "100%");

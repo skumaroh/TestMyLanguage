@@ -38,4 +38,25 @@ class AssessmentMediaServiceTest {
     void acceptsAFileNamedOnlyWithTheKey() {
         assertTrue(AssessmentMediaService.indexLetterAudio(List.of("audio/hindi/u0915.mp3")).containsKey("u0915"));
     }
+
+    @Test
+    void indexesPicturesByWordForTheKnownNamingPatterns() {
+        Map<String, String> index = AssessmentMediaService.indexImages(List.of(
+                "images/20260604_dog.jpg",
+                "images/20260604_dog_mobile.jpg",
+                "images/20260507_ab12cd34_tree.png",
+                "images/cat.gif",
+                "images/notes.txt"));
+        assertEquals("images/20260604_dog.jpg", index.get("dog"));
+        assertEquals("images/20260507_ab12cd34_tree.png", index.get("tree"));
+        assertEquals("images/cat.gif", index.get("cat"));
+        assertEquals(false, index.containsKey("notes"));
+    }
+
+    @Test
+    void theNewestPictureOfAWordWins() {
+        Map<String, String> index = AssessmentMediaService.indexImages(List.of(
+                "images/20260101000000_dog.jpg", "images/20260901000000_dog.png"));
+        assertEquals("images/20260901000000_dog.png", index.get("dog"));
+    }
 }

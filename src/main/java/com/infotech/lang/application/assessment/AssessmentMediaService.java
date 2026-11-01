@@ -48,6 +48,11 @@ public class AssessmentMediaService {
     private final Map<String, Instant> letterIndexFailures = new ConcurrentHashMap<>();
     private static final long LETTER_RETRY_SECONDS = 60;
 
+    /** Word pictures are found by name: {@code images/[timestamp_[hash_]]word.ext}; the index is rebuilt every ten minutes. */
+    private static final Pattern IMAGE_FILE = Pattern.compile("^(?:\\d+_(?:[0-9a-f]{8}_)?)?(.+)$");
+    private volatile LetterIndex imageIndex;
+    private volatile Instant imageIndexFailedAt;
+
     public AssessmentMediaService(@Value("${azure.storage.connection-string:}") String imageConnectionString,
                                   @Value("${azure.storage.audio-connection-string:}") String audioConnectionString) {
         this.imageConnectionString = imageConnectionString;
@@ -149,6 +154,79 @@ public class AssessmentMediaService {
             return null;
         } catch (RuntimeException e) {
             logger.warn("Could not list letter audio for {}: {}", lang, e.getClass().getSimpleName());
+            return null;
+        }
+    }
+
+    /** Maps each word (lower case) to its newest picture among the given blob names under {@code images/} (pure). */
+    static Map<String, String> indexImages(List<String> blobNames) {
+        Map<String, String> newest = new HashMap<>();
+        for (String blobName : blobNames) {
+            String filename = blobName.substring(blobName.lastIndexOf('/') + 1).toLowerCase(Locale.ROOT);
+            int dot = filename.lastIndexOf('.');
+            if (dot <= 0) {
+                continue;
+            }
+            String ext = filename.substring(dot + 1);
+            if (!(ext.equals("jpg") || ext.equals("jpeg") || ext.equals("png") || ext.equals("gif") || ext.equals("webp"))) {
+                continue;
+            }
+            String stem = filename.substring(0, dot);
+            Matcher m = IMAGE_FILE.matcher(stem);
+            if (m.matches()) {
+                newest.merge(m.group(1), blobName, (a, b) -> a.compareTo(b) >= 0 ? a : b);
+            }
+            // the older naming without a hash, {timestamp}_{word}, is covered above; a bare {word}.ext is the stem itself
+            newest.merge(stem, blobName, (a, b) -> a.compareTo(b) >= 0 ? a : b);
+        }
+        return newest;
+    }
+
+    /** The picture of a word (its English text, for example "Tree"), when one exists in the images container. Never throws. */
+    public Optional<String> imageBlobForWord(String word) {
+        if (word == null || word.isBlank()) {
+            return Optional.empty();
+        }
+        LetterIndex index = imageIndex;
+        if (index == null || index.loadedAt().plusSeconds(LETTER_INDEX_MINUTES * 60).isBefore(Instant.now())) {
+            Instant failedAt = imageIndexFailedAt;
+            if (failedAt != null && failedAt.plusSeconds(LETTER_RETRY_SECONDS).isAfter(Instant.now())) {
+                return Optional.empty();
+            }
+            index = loadImageIndex();
+            if (index == null) {
+                imageIndexFailedAt = Instant.now();
+                return Optional.empty();
+            }
+            imageIndexFailedAt = null;
+            imageIndex = index;
+        }
+        String key = word.toLowerCase(Locale.ROOT).trim();
+        String blob = index.blobsByKey().get(key);
+        if (blob == null) {
+            blob = index.blobsByKey().get(key.replace(' ', '_'));
+        }
+        return Optional.ofNullable(blob);
+    }
+
+    private LetterIndex loadImageIndex() {
+        if (imageConnectionString == null || imageConnectionString.isBlank()) {
+            return null;
+        }
+        try {
+            BlobServiceClient client = clients.computeIfAbsent(imageConnectionString,
+                    cs -> new BlobServiceClientBuilder().connectionString(cs).buildClient());
+            List<String> names = new ArrayList<>();
+            for (BlobItem item : client.getBlobContainerClient(IMAGE_CONTAINER)
+                    .listBlobs(new ListBlobsOptions().setPrefix("images/"), null)) {
+                names.add(item.getName());
+            }
+            return new LetterIndex(indexImages(names), Instant.now());
+        } catch (BlobStorageException e) {
+            logger.warn("Could not list word pictures: status {}, error code {}", e.getStatusCode(), e.getErrorCode());
+            return null;
+        } catch (RuntimeException e) {
+            logger.warn("Could not list word pictures: {}", e.getClass().getSimpleName());
             return null;
         }
     }
