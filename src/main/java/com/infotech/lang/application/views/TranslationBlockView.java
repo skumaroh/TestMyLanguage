@@ -1,5 +1,6 @@
 package com.infotech.lang.application.views;
 
+import com.infotech.lang.application.ai.SpeechToText;
 import com.infotech.lang.application.assessment.AssessBlockResult;
 import com.infotech.lang.application.assessment.AssessmentService;
 import com.infotech.lang.application.assessment.BlockEngine;
@@ -11,6 +12,7 @@ import com.infotech.lang.application.translation.SentencePicker;
 import com.infotech.lang.application.translation.SpellingRun;
 import com.infotech.lang.application.translation.SpellingSuggester;
 import com.infotech.lang.application.translation.TypedWord;
+import com.infotech.lang.application.voice.VoiceInput;
 import com.infotech.lang.application.translation.TileQuestion;
 import com.infotech.lang.application.translation.TranslationGrader;
 import com.infotech.lang.application.translation.TranslationItem;
@@ -67,6 +69,9 @@ public class TranslationBlockView extends VerticalLayout {
 
     private final SentencePicker picker;
     private final SpellingSuggester speller;
+    private final SpeechToText speech;
+    private boolean voiceUsed;
+    private String voiceText = "";
     private Div suggestionRow;
     private String lastSuggestedFor = "";
     private int suggestionsUsed;
@@ -89,11 +94,13 @@ public class TranslationBlockView extends VerticalLayout {
                                 AssessmentService assessment,
                                 TranslationGrader grader,
                                 SpellingSuggester speller,
+                                SpeechToText speech,
                                 LanguageContext languageContext) {
         this.assessment = assessment;
         this.grader = grader;
         this.picker = picker;
         this.speller = speller;
+        this.speech = speech;
         this.language = languageContext.getLanguage();
         setAlignItems(Alignment.CENTER);
         setMaxWidth("720px");
@@ -156,6 +163,8 @@ public class TranslationBlockView extends VerticalLayout {
         suggestionRow.getStyle().set("min-height", "2.5em");
         suggestionsUsed = 0;
         lastSuggestedFor = "";
+        voiceUsed = false;
+        voiceText = "";
         answerBox.setValueChangeMode(ValueChangeMode.LAZY);
         answerBox.setValueChangeTimeout(900);
         // the suggestion buttons stay while the learner keeps typing; they are recomputed after each pause
@@ -164,7 +173,8 @@ public class TranslationBlockView extends VerticalLayout {
                 offerSpelling();
             }
         });
-        add(answerBox, suggestionRow, hint, checkButton);
+        VoiceInput voice = new VoiceInput(speech, language, this::takeSpokenText);
+        add(answerBox, voice, suggestionRow, hint, checkButton);
         String tag = "hindi".equalsIgnoreCase(language) ? "hindi" : "tamil";
         answerBox.getElement().executeJs("window.tmlTransliterate && window.tmlTransliterate.attach(this, $0)", tag);
     }
@@ -194,6 +204,17 @@ public class TranslationBlockView extends VerticalLayout {
                 logger.warn("Spelling help failed", ex);
             }
         });
+    }
+
+    /** Spoken words go into the box after what is already there; the learner can edit them or submit them as they are. */
+    private void takeSpokenText(String spoken) {
+        String current = answerBox.getValue() == null ? "" : answerBox.getValue().trim();
+        String joined = current.isEmpty() ? spoken : current + " " + spoken;
+        answerBox.setValue(joined);
+        voiceUsed = true;
+        voiceText = joined;
+        suggestionRow.removeAll();
+        answerBox.getElement().executeJs("this.__tmlSync && this.__tmlSync()");
     }
 
     private List<TypedWord> readTypedWords(String raw) {
@@ -335,7 +356,7 @@ public class TranslationBlockView extends VerticalLayout {
                 }
             }
             boolean graderFailed = grade.verdict() == TranslationVerdict.ERROR;
-            String mode = tiles ? "TILES " : (suggestionsUsed > 0 ? "SPELLING-HELP " + suggestionsUsed + " " : "");
+            String mode = tiles ? "TILES " : voiceMode(given) + (suggestionsUsed > 0 ? "SPELLING-HELP " + suggestionsUsed + " " : "");
             String spellingNote = grade.hasSpellingNote()
                     ? " {SPELLING " + grade.spelling() + (grade.corrected().isBlank() ? "" : ": " + grade.corrected()) + "}" : "";
             String log = (graderFailed ? "FLAG grader unavailable: " : "") + mode + given + " [" + grade.verdict() + "]" + spellingNote;
@@ -356,6 +377,14 @@ public class TranslationBlockView extends VerticalLayout {
             checkButton.setEnabled(true);
             Notification.show("Sorry, that answer could not be saved. Please try again.");
         }
+    }
+
+    /** Marks spoken answers in the answer log so the report can show them: VOICE as spoken, VOICE-EDITED if changed after. */
+    private String voiceMode(String given) {
+        if (!voiceUsed) {
+            return "";
+        }
+        return given.trim().equals(voiceText.trim()) ? "VOICE " : "VOICE-EDITED ";
     }
 
     private void showDone() {
