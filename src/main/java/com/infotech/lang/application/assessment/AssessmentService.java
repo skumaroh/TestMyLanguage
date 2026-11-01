@@ -66,4 +66,11 @@ public class AssessmentService {
         block.setFinishedAt(OffsetDateTime.now());
         blocks.save(block);
     }
+
+    /** The student's attempt in progress (started by the first block), or a new one if there is none. */
+    @Transactional
+    public AssessAttempt currentOrNewAttempt(UUID userId, String language, int level) {
+        return attempts.findFirstByUserIdAndStatusOrderByIdDesc(userId, "IN_PROGRESS")
+                .orElseGet(() -> startAttempt(userId, language, level));
+    }
 }

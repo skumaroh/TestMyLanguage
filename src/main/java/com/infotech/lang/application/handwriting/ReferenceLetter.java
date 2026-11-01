@@ -25,6 +25,9 @@ public class ReferenceLetter {
     @Column(name = "curriculum_id")
     private Long curriculumId;
 
+    @Column(name = "level", precision = 4, scale = 2)
+    private java.math.BigDecimal level;
+
     @Column(name = "category")
     private String category;
 

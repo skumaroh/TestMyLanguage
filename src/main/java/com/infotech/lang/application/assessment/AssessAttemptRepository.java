@@ -7,4 +7,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 public interface AssessAttemptRepository extends JpaRepository<AssessAttempt, Long> {
 
     List<AssessAttempt> findByUserIdAndStatus(UUID userId, String status);
+
+    java.util.Optional<AssessAttempt> findFirstByUserIdAndStatusOrderByIdDesc(UUID userId, String status);
 }
