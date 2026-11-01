@@ -66,7 +66,7 @@ public class AssessmentMediaService {
     /** True for the two containers the proxy may serve for the given kind ({@code audio} or {@code image}). */
     public static boolean isAllowed(String kind, String container) {
         return ("audio".equals(kind) && AUDIO_CONTAINER.equals(container))
-                || ("image".equals(kind) && IMAGE_CONTAINER.equals(container));
+                || ("image".equals(kind) && (IMAGE_CONTAINER.equals(container) || REFERENCE_CONTAINER.equals(container)));
     }
 
     /** The blob's bytes, or empty when it does not exist or cannot be read. Never throws. */

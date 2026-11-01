@@ -186,7 +186,7 @@ public class WordsBlockView extends VerticalLayout {
         removeAll();
         add(new H2("Words finished"));
         add(new Paragraph("Thank you. Your answers are saved. Your results will be shown at the end of the assessment."));
-        add(new Paragraph("The next part is not ready yet."));
+        add(new Button("Continue to the letters", e -> getUI().ifPresent(ui -> ui.navigate("assessment/letters"))));
         add(new Button("Back to the welcome page", e -> getUI().ifPresent(ui -> ui.navigate("welcome"))));
     }
 

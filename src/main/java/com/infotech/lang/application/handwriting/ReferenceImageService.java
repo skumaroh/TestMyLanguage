@@ -88,4 +88,18 @@ public class ReferenceImageService implements ReferenceImages {
         png.ifPresent(bytes -> cache.put(blob, bytes));
         return png;
     }
+
+    /** The saved address of a letter's reference image, if it has one. */
+    public Optional<String> referenceUrlFor(String letter) {
+        if (letter == null || letter.isBlank()) {
+            return Optional.empty();
+        }
+        for (ReferenceLetter row : letters.findForLetter(letter.trim())) {
+            String url = row.getReferenceBlobUrl();
+            if (url != null && !url.isBlank()) {
+                return Optional.of(url.trim());
+            }
+        }
+        return Optional.empty();
+    }
 }

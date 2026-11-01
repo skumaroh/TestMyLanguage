@@ -59,4 +59,13 @@ class AssessmentMediaServiceTest {
                 "images/20260101000000_dog.jpg", "images/20260901000000_dog.png"));
         assertEquals("images/20260901000000_dog.png", index.get("dog"));
     }
+
+    @Test
+    void theProxyServesAudioFromTheAudioContainerAndImagesFromTheImageAndReferenceContainers() {
+        assertTrue(AssessmentMediaService.isAllowed("audio", "language-tool-audio"));
+        assertTrue(AssessmentMediaService.isAllowed("image", "language-tool-images"));
+        assertTrue(AssessmentMediaService.isAllowed("image", "language-tool-letter-references"));
+        assertEquals(false, AssessmentMediaService.isAllowed("audio", "language-tool-images"));
+        assertEquals(false, AssessmentMediaService.isAllowed("image", "language-tool-handwriting"));
+    }
 }
