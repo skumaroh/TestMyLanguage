@@ -18,7 +18,7 @@ import java.util.Locale;
  * Admin test page for the translation grader: type an English sentence, a reference translation (optional) and a learner's
  * answer, and see the verdict and reason. Nothing is stored except the model-call log row (no text).
  */
-@Route("admin/translation-check")
+@Route(value = "admin/translation-check", layout = MainLayout.class)
 @PageTitle("Translation check | TestMyLanguage")
 @RolesAllowed("ADMIN")
 public class TranslationCheckView extends VerticalLayout {

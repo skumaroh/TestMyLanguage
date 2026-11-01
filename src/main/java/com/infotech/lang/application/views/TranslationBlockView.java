@@ -35,7 +35,7 @@ import org.springframework.security.core.userdetails.UserDetails;
  * log starts with {@code FLAG}. One point per correct sentence; correctness is not shown until the final report.
  * {@link BlockEngine} decides how many sentences are asked (4, then 4 more, always ending after 8).
  */
-@Route("assessment/translation")
+@Route(value = "assessment/translation", layout = MainLayout.class)
 @PageTitle("Translation | TestMyLanguage")
 @PermitAll
 public class TranslationBlockView extends VerticalLayout {

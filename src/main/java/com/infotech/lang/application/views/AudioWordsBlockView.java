@@ -34,7 +34,7 @@ import org.springframework.security.core.userdetails.UserDetails;
  * picture. Only words that have a recording are used, and words already asked in this attempt are avoided. One point per correct
  * word, none for a wrong one; correctness is not shown until the final report. {@link BlockEngine} decides how many words.
  */
-@Route("assessment/audio-words")
+@Route(value = "assessment/audio-words", layout = MainLayout.class)
 @PageTitle("Audio words | TestMyLanguage")
 @PermitAll
 public class AudioWordsBlockView extends VerticalLayout {
