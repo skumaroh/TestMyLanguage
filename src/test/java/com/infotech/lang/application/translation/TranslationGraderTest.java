@@ -126,4 +126,30 @@ class TranslationGraderTest {
         org.junit.jupiter.api.Assertions.assertTrue(task.contains("English (Latin) letters"));
         org.junit.jupiter.api.Assertions.assertTrue(task.contains("word order is fine"));
     }
+
+    @Test
+    void spellingIsReportedSeparatelyAndNeverChangesTheVerdict() {
+        TranslationGrader.Grade g = answering("{\"verdict\":\"SAME_MEANING\",\"reason\":\"Same.\","
+                + "\"spelling\":\"MINOR_ERRORS\",\"corrected\":\"பறவைகள் பறக்கும்\"}")
+                .grade("tamil", "Birds can fly.", "பறவைகள் பறக்கும்.", "ப்ரவைகல் பரக்கும்");
+        assertTrue(g.correct());
+        assertTrue(g.hasSpellingNote());
+        assertEquals("பறவைகள் பறக்கும்", g.corrected());
+    }
+
+    @Test
+    void anExactMatchHasCorrectSpellingAndNoNote() {
+        TranslationGrader.Grade g = neverAsked().grade("tamil", ENGLISH, EXPECTED, EXPECTED);
+        assertEquals("CORRECT", g.spelling());
+        assertFalse(g.hasSpellingNote());
+    }
+
+    @Test
+    void anUnknownSpellingValueIsIgnored() {
+        TranslationGrader.Grade g = answering("{\"verdict\":\"SAME_MEANING\",\"reason\":\"Same.\",\"spelling\":\"bad\",\"corrected\":\"x\"}")
+                .grade("tamil", ENGLISH, EXPECTED, "something");
+        assertTrue(g.correct());
+        assertFalse(g.hasSpellingNote());
+        assertEquals("", g.corrected());
+    }
 }

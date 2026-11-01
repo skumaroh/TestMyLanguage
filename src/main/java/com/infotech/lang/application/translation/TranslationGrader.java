@@ -35,8 +35,21 @@ public class TranslationGrader {
      * @param reason     one short English sentence explaining the verdict (empty for an exact match)
      * @param usedModel  false for an exact match or an empty answer
      * @param latencyMs  time spent asking the model, 0 when it was not asked
+     * @param spelling   CORRECT, MINOR_ERRORS, MANY_ERRORS or NOT_APPLICABLE (answer in English letters); blank when not judged.
+     *                   Spelling never changes whether the answer is correct: it is reported to the student at the end.
+     * @param corrected  the answer with only its spelling fixed (blank when the spelling is correct or not judged)
      */
-    public record Grade(boolean correct, TranslationVerdict verdict, String reason, boolean usedModel, long latencyMs) {
+    public record Grade(boolean correct, TranslationVerdict verdict, String reason, boolean usedModel, long latencyMs,
+                        String spelling, String corrected) {
+
+        public Grade(boolean correct, TranslationVerdict verdict, String reason, boolean usedModel, long latencyMs) {
+            this(correct, verdict, reason, usedModel, latencyMs, "", "");
+        }
+
+        /** True when the answer was marked right but its spelling should be pointed out in the final report. */
+        public boolean hasSpellingNote() {
+            return "MINOR_ERRORS".equals(spelling) || "MANY_ERRORS".equals(spelling);
+        }
     }
 
     private final AiGateway gateway;
@@ -53,7 +66,7 @@ public class TranslationGrader {
             return new Grade(false, TranslationVerdict.UNREADABLE, "No answer was given.", false, 0);
         }
         if (expected != null && !expected.isBlank() && normalize(given).equals(normalize(expected))) {
-            return new Grade(true, TranslationVerdict.SAME_MEANING, "", false, 0);
+            return new Grade(true, TranslationVerdict.SAME_MEANING, "", false, 0, "CORRECT", "");
         }
         if (given.length() > MAX_ANSWER_CHARS) {
             given = given.substring(0, MAX_ANSWER_CHARS);
@@ -77,7 +90,15 @@ public class TranslationGrader {
             if (reason.length() > MAX_REASON_CHARS) {
                 reason = reason.substring(0, MAX_REASON_CHARS);
             }
-            return new Grade(verdict == TranslationVerdict.SAME_MEANING, verdict, reason, true, latencyMs);
+            String spelling = root.path("spelling").asText("").trim().toUpperCase(Locale.ROOT);
+            if (!List.of("CORRECT", "MINOR_ERRORS", "MANY_ERRORS", "NOT_APPLICABLE").contains(spelling)) {
+                spelling = "";
+            }
+            String corrected = spelling.endsWith("_ERRORS") ? root.path("corrected").asText("").trim() : "";
+            if (corrected.length() > MAX_ANSWER_CHARS) {
+                corrected = corrected.substring(0, MAX_ANSWER_CHARS);
+            }
+            return new Grade(verdict == TranslationVerdict.SAME_MEANING, verdict, reason, true, latencyMs, spelling, corrected);
         } catch (Exception e) {
             return new Grade(false, TranslationVerdict.ERROR, "The grader gave an unusable answer.", true, latencyMs);
         }
@@ -112,7 +133,12 @@ public class TranslationGrader {
                 .append("- NOT_IN_LANGUAGE: the answer is in another language, for example the sentence translated into plain English, ")
                 .append("or words of some other language.\n")
                 .append("- UNREADABLE: nonsense or unreadable.\n")
-                .append("Give a reason in one short English sentence.");
+                .append("Give a reason in one short English sentence.\n\n")
+                .append("Also report the SPELLING of the learner's answer, separately from the meaning (spelling never changes the verdict): ")
+                .append("CORRECT when every word is spelled correctly in ").append(name).append("; MINOR_ERRORS when a few letters are wrong ")
+                .append("but the words are recognisable; MANY_ERRORS when many words are misspelled; NOT_APPLICABLE when the answer is written ")
+                .append("in English (Latin) letters or is not in the language. When the spelling is not CORRECT, put the answer with ")
+                .append("only its spelling fixed (same words, same order) in \"corrected\"; otherwise leave \"corrected\" empty.");
         return sb.toString();
     }
 
@@ -122,13 +148,20 @@ public class TranslationGrader {
         verdict.put("enum", List.of("SAME_MEANING", "DIFFERENT_MEANING", "NOT_IN_LANGUAGE", "UNREADABLE"));
         Map<String, Object> reason = new LinkedHashMap<>();
         reason.put("type", "string");
+        Map<String, Object> spelling = new LinkedHashMap<>();
+        spelling.put("type", "string");
+        spelling.put("enum", List.of("CORRECT", "MINOR_ERRORS", "MANY_ERRORS", "NOT_APPLICABLE"));
+        Map<String, Object> corrected = new LinkedHashMap<>();
+        corrected.put("type", "string");
         Map<String, Object> properties = new LinkedHashMap<>();
         properties.put("verdict", verdict);
         properties.put("reason", reason);
+        properties.put("spelling", spelling);
+        properties.put("corrected", corrected);
         Map<String, Object> schema = new LinkedHashMap<>();
         schema.put("type", "object");
         schema.put("properties", properties);
-        schema.put("required", Arrays.asList("verdict", "reason"));
+        schema.put("required", Arrays.asList("verdict", "reason", "spelling", "corrected"));
         schema.put("additionalProperties", false);
         return schema;
     }
