@@ -148,6 +148,7 @@ public class DrawLettersBlockView extends VerticalLayout {
             String log = (verdict.correct() ? "" : "FLAG unclear: ") + verdict.summary(current);
             int duration = (int) Math.min(Integer.MAX_VALUE, System.currentTimeMillis() - shownAtMillis);
             assessment.recordAnswer(block.getId(), engine.asked() + 1, "letter:" + current, log, verdict.correct(), duration);
+            AdminFeedback.show(verdict.correct(), log);
             engine.record(verdict.correct());
             if (engine.isComplete()) {
                 assessment.finishBlock(block.getId(), engine.asked(), engine.correct(), engine.passed());

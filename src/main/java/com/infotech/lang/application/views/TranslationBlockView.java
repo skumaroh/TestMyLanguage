@@ -122,6 +122,7 @@ public class TranslationBlockView extends VerticalLayout {
             String log = (graderFailed ? "FLAG grader unavailable: " : "") + given + " [" + grade.verdict() + "]";
             int duration = (int) Math.min(Integer.MAX_VALUE, System.currentTimeMillis() - shownAtMillis);
             assessment.recordAnswer(block.getId(), engine.asked() + 1, "sentence:" + current.id(), log, grade.correct(), duration);
+            AdminFeedback.show(grade.correct(), grade.verdict().toString());
             engine.record(grade.correct());
             if (engine.isComplete()) {
                 assessment.finishBlock(block.getId(), engine.asked(), engine.correct(), engine.passed());
