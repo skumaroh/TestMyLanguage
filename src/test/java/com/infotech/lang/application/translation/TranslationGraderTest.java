@@ -60,8 +60,8 @@ class TranslationGraderTest {
 
     @Test
     void anAnswerInAnotherLanguageIsNotCorrect() {
-        TranslationGrader.Grade g = answering("{\"verdict\":\"NOT_IN_LANGUAGE\",\"reason\":\"English letters.\"}")
-                .grade("tamil", ENGLISH, EXPECTED, "enakku mambazham pidikkum");
+        TranslationGrader.Grade g = answering("{\"verdict\":\"NOT_IN_LANGUAGE\",\"reason\":\"Plain English.\"}")
+                .grade("tamil", ENGLISH, EXPECTED, "I like mangoes");
         assertFalse(g.correct());
         assertEquals(TranslationVerdict.NOT_IN_LANGUAGE, g.verdict());
     }
@@ -118,5 +118,12 @@ class TranslationGraderTest {
         grader.grade("tamil", ENGLISH, EXPECTED, "வேறு");
         assertEquals("TRANSLATION_GRADE", seen[0].purpose());
         assertEquals(null, seen[0].imagePng());
+    }
+
+    @Test
+    void theRubricAcceptsAnswersWrittenInEnglishLetters() {
+        String task = TranslationGrader.task("tamil", ENGLISH, EXPECTED, "enakku mambazham pidikkum");
+        org.junit.jupiter.api.Assertions.assertTrue(task.contains("English (Latin) letters"));
+        org.junit.jupiter.api.Assertions.assertTrue(task.contains("word order is fine"));
     }
 }

@@ -1,27 +1,29 @@
-# Level 1 translation sentences: one English sentence per line; blank lines and lines starting with # are ignored.
-# The student writes each sentence in Tamil or Hindi; the Meta model judges the meaning (there is no reference translation).
-# Keep them short and simple (present tense, everyday words, no names). Reviewed by the owner before use.
-I am a student.
-This is my house.
-The sun is hot.
-I drink water.
-The dog is big.
-She has a book.
-I like mangoes.
-We eat rice.
-The cat is under the table.
-He is my father.
-The sun sets in the west.
-I go to school.
-The flower is red.
-My mother is at home.
-Birds can fly.
-The water is cold.
-I have two hands.
-The moon comes at night.
-Come here.
-Please give me water.
-It is a big tree.
-The boy is playing.
-I see a bird.
-The milk is white.
+# Level 1 translation sentences. One per line: English | Tamil | Hindi. Blank lines and lines starting with # are ignored.
+# Tamil and Hindi: the first form is the canonical answer; extra accepted forms follow, separated by ;
+# (for example the feminine form of a verb). The answers are used for the word-tile questions and as a reference for
+# the Meta grader. DRAFT answers: to be reviewed by the owner / a native speaker before use with real learners.
+# Keep the English short and simple (present tense, everyday words, no names).
+I am a student. | நான் ஒரு மாணவன்.; நான் ஒரு மாணவி. | मैं एक छात्र हूँ।; मैं एक छात्रा हूँ।
+This is my house. | இது என் வீடு. | यह मेरा घर है।
+The sun is hot. | சூரியன் சூடாக இருக்கிறது. | सूरज गर्म है।
+I drink water. | நான் தண்ணீர் குடிக்கிறேன். | मैं पानी पीता हूँ।; मैं पानी पीती हूँ।
+The dog is big. | நாய் பெரியது. | कुत्ता बड़ा है।
+She has a book. | அவளிடம் ஒரு புத்தகம் இருக்கிறது. | उसके पास एक किताब है।
+I like mangoes. | எனக்கு மாம்பழம் பிடிக்கும். | मुझे आम पसंद हैं।
+We eat rice. | நாங்கள் சாதம் சாப்பிடுகிறோம். | हम चावल खाते हैं।
+The cat is under the table. | பூனை மேசைக்கு கீழே இருக்கிறது. | बिल्ली मेज़ के नीचे है।
+He is my father. | அவர் என் அப்பா. | वह मेरे पिता हैं।
+The sun sets in the west. | சூரியன் மேற்கில் மறைகிறது. | सूरज पश्चिम में डूबता है।
+I go to school. | நான் பள்ளிக்குச் செல்கிறேன். | मैं स्कूल जाता हूँ।; मैं स्कूल जाती हूँ।
+The flower is red. | பூ சிவப்பாக இருக்கிறது. | फूल लाल है।
+My mother is at home. | என் அம்மா வீட்டில் இருக்கிறார். | मेरी माँ घर पर हैं।
+Birds can fly. | பறவைகள் பறக்கும். | पक्षी उड़ सकते हैं।
+The water is cold. | தண்ணீர் குளிராக இருக்கிறது. | पानी ठंडा है।
+I have two hands. | எனக்கு இரண்டு கைகள் உள்ளன. | मेरे दो हाथ हैं।
+The moon comes at night. | இரவில் நிலா வருகிறது. | रात में चाँद आता है।
+Come here. | இங்கே வா. | यहाँ आओ।
+Please give me water. | தயவு செய்து எனக்கு தண்ணீர் கொடுங்கள். | कृपया मुझे पानी दीजिए।
+It is a big tree. | இது ஒரு பெரிய மரம். | यह एक बड़ा पेड़ है।
+The boy is playing. | சிறுவன் விளையாடுகிறான். | लड़का खेल रहा है।
+I see a bird. | நான் ஒரு பறவையைப் பார்க்கிறேன். | मैं एक पक्षी देखता हूँ।; मैं एक पक्षी देखती हूँ।
+The milk is white. | பால் வெள்ளையாக இருக்கிறது. | दूध सफ़ेद है।

@@ -102,11 +102,15 @@ public class TranslationGrader {
                 .append(answer).append("\nANSWER>>>\n\n");
         sb.append("Choose exactly one verdict:\n")
                 .append("- SAME_MEANING: the answer is in ").append(name).append(" and says the same thing as the English sentence. ")
-                .append("Different but correct wording is fine, and so are small spelling slips that do not change the meaning. ")
+                .append("Different but correct wording or word order is fine, and so are small spelling slips that do not change the meaning. ")
+                .append("Writing the ").append(name).append(" words in English (Latin) letters, for example 'naan oru maanavan', ")
+                .append("also counts: judge the meaning of the words, not the script, and be lenient about romanised spelling. ")
                 .append("The reference is only one possible correct answer.\n")
                 .append("- DIFFERENT_MEANING: the answer is in ").append(name)
-                .append(" but says something else, or leaves out or changes an important part (who, what, when, number, negation).\n")
-                .append("- NOT_IN_LANGUAGE: the answer is mostly in another language or script, for example English letters or a transliteration.\n")
+                .append(" (in its own script or in English letters) but says something else, or leaves out or changes an important part ")
+                .append("(who, what, when, number, negation).\n")
+                .append("- NOT_IN_LANGUAGE: the answer is in another language, for example the sentence translated into plain English, ")
+                .append("or words of some other language.\n")
                 .append("- UNREADABLE: nonsense or unreadable.\n")
                 .append("Give a reason in one short English sentence.");
         return sb.toString();
