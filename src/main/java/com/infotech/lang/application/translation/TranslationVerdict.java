@@ -6,7 +6,7 @@ public enum TranslationVerdict {
     SAME_MEANING,
     /** The answer is in the language but says something else, or misses part of the meaning. */
     DIFFERENT_MEANING,
-    /** The answer is mostly in another language or script (for example English letters). */
+    /** The answer is mostly in another language (for example plain English words). */
     NOT_IN_LANGUAGE,
     /** Empty, nonsense or unreadable. */
     UNREADABLE,
