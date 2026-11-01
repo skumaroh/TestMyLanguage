@@ -115,6 +115,14 @@ function attach(host, language, tries = 0) {
   };
   const current = () => words[words.length - 1];
 
+  // Called by the page after it put text into the box itself (for example words that were spoken): positions are no longer known.
+  host.__tmlSync = () => {
+    raw = '';
+    shown = textarea.value || '';
+    words.forEach((w) => { w.edited = true; });
+    publish();
+  };
+
   // Replaces the text between start and end by `text` when that span still holds `expected`. Returns true when done.
   host.__tmlReplace = (start, end, expected, text) => {
     if (shown.slice(start, end) !== expected) return false;
