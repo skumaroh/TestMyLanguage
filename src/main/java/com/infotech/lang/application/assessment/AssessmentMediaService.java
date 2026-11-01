@@ -44,6 +44,9 @@ public class AssessmentMediaService {
     }
 
     private final Map<String, LetterIndex> letterIndexes = new ConcurrentHashMap<>();
+    /** When listing a language's letter recordings last failed; a failure is not retried for a minute. */
+    private final Map<String, Instant> letterIndexFailures = new ConcurrentHashMap<>();
+    private static final long LETTER_RETRY_SECONDS = 60;
 
     public AssessmentMediaService(@Value("${azure.storage.connection-string:}") String imageConnectionString,
                                   @Value("${azure.storage.audio-connection-string:}") String audioConnectionString) {
@@ -112,10 +115,16 @@ public class AssessmentMediaService {
         String lang = language.toLowerCase(Locale.ROOT).trim();
         LetterIndex index = letterIndexes.get(lang);
         if (index == null || index.loadedAt().plusSeconds(LETTER_INDEX_MINUTES * 60).isBefore(Instant.now())) {
-            index = loadLetterIndex(lang);
-            if (index == null) {
+            Instant failedAt = letterIndexFailures.get(lang);
+            if (failedAt != null && failedAt.plusSeconds(LETTER_RETRY_SECONDS).isAfter(Instant.now())) {
                 return Optional.empty();
             }
+            index = loadLetterIndex(lang);
+            if (index == null) {
+                letterIndexFailures.put(lang, Instant.now());
+                return Optional.empty();
+            }
+            letterIndexFailures.remove(lang);
             letterIndexes.put(lang, index);
         }
         return Optional.ofNullable(index.blobsByKey().get(audioKey(letter)));
@@ -134,6 +143,10 @@ public class AssessmentMediaService {
                 names.add(item.getName());
             }
             return new LetterIndex(indexLetterAudio(names), Instant.now());
+        } catch (BlobStorageException e) {
+            logger.warn("Could not list letter audio for {}: status {}, error code {} (listing needs the List permission on the token)",
+                    lang, e.getStatusCode(), e.getErrorCode());
+            return null;
         } catch (RuntimeException e) {
             logger.warn("Could not list letter audio for {}: {}", lang, e.getClass().getSimpleName());
             return null;
