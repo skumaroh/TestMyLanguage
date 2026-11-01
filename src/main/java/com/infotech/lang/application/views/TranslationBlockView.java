@@ -8,7 +8,9 @@ import com.infotech.lang.application.data.entity.User;
 import com.infotech.lang.application.data.repository.UserRepository;
 import com.infotech.lang.application.security.SecurityService;
 import com.infotech.lang.application.translation.SentencePicker;
+import com.infotech.lang.application.translation.SpellingRun;
 import com.infotech.lang.application.translation.SpellingSuggester;
+import com.infotech.lang.application.translation.TypedWord;
 import com.infotech.lang.application.translation.TileQuestion;
 import com.infotech.lang.application.translation.TranslationGrader;
 import com.infotech.lang.application.translation.TranslationItem;
@@ -16,6 +18,8 @@ import com.infotech.lang.application.translation.TranslationVerdict;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.dependency.JsModule;
 import com.vaadin.flow.data.value.ValueChangeMode;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.html.H3;
@@ -65,7 +69,8 @@ public class TranslationBlockView extends VerticalLayout {
     private final SpellingSuggester speller;
     private Div suggestionRow;
     private String lastSuggestedFor = "";
-    private boolean usedSuggestion;
+    private int suggestionsUsed;
+    private final ObjectMapper json = new ObjectMapper();
 
     private List<TranslationItem> items = List.of();
     private List<TranslationItem> pool = List.of();
@@ -149,12 +154,12 @@ public class TranslationBlockView extends VerticalLayout {
         checkButton = new Button("Check", e -> submit());
         suggestionRow = new Div();
         suggestionRow.getStyle().set("min-height", "2.5em");
-        usedSuggestion = false;
+        suggestionsUsed = 0;
         lastSuggestedFor = "";
         answerBox.setValueChangeMode(ValueChangeMode.LAZY);
         answerBox.setValueChangeTimeout(900);
+        // the suggestion buttons stay while the learner keeps typing; they are recomputed after each pause
         answerBox.addValueChangeListener(e -> {
-            suggestionRow.removeAll();
             if (e.isFromClient()) {
                 offerSpelling();
             }
@@ -165,32 +170,107 @@ public class TranslationBlockView extends VerticalLayout {
     }
 
     /**
-     * After the learner pauses, asks Meta for the best script spelling of the English letters typed and offers it as a
-     * "Did you mean" button. The text is never changed unless the learner taps it.
+     * After the learner pauses, asks Meta for the best script spelling of each word typed in English letters and offers one
+     * button per word (or run of neighbouring words). Tapping a button replaces exactly those words and nothing else; the text is
+     * never changed unless the learner taps.
      */
     private void offerSpelling() {
-        answerBox.getElement().executeJs("return this.getAttribute('data-raw') || ''").then(String.class, raw -> {
-            String typed = raw == null ? "" : raw.trim();
-            String shown = answerBox.getValue() == null ? "" : answerBox.getValue();
-            if (typed.isEmpty() || typed.equals(lastSuggestedFor)) {
+        answerBox.getElement().executeJs("return this.getAttribute('data-words') || '[]'").then(String.class, raw -> {
+            List<TypedWord> typed = readTypedWords(raw);
+            String key = typed.stream().map(w -> w.raw() + "=" + w.shown() + "@" + w.start()).reduce("", (a, b) -> a + "|" + b);
+            if (typed.isEmpty()) {
+                suggestionRow.removeAll();
+                lastSuggestedFor = "";
                 return;
             }
-            lastSuggestedFor = typed;
+            if (key.equals(lastSuggestedFor)) {
+                return;
+            }
+            lastSuggestedFor = key;
             try {
-                speller.suggest(language, typed, shown).ifPresent(suggestion -> {
-                    suggestionRow.removeAll();
-                    Button use = new Button(suggestion, click -> {
-                        answerBox.setValue(suggestion);
-                        usedSuggestion = true;
-                        suggestionRow.removeAll();
-                        answerBox.getElement().executeJs("this.__tmlReset && this.__tmlReset()");
-                    });
-                    Span label = new Span("Did you mean: ");
-                    label.getStyle().set("margin-right", "var(--lumo-space-s)");
-                    suggestionRow.add(label, use);
-                });
+                List<SpellingRun> runs = SpellingRun.group(typed, speller.suggestWords(language, typed));
+                showRuns(new ArrayList<>(runs));
             } catch (RuntimeException ex) {
                 logger.warn("Spelling help failed", ex);
+            }
+        });
+    }
+
+    private List<TypedWord> readTypedWords(String raw) {
+        List<TypedWord> words = new ArrayList<>();
+        try {
+            for (JsonNode n : json.readTree(raw == null ? "[]" : raw)) {
+                words.add(new TypedWord(n.path("raw").asText(""), n.path("shown").asText(""), n.path("start").asInt(),
+                        n.path("end").asInt()));
+            }
+        } catch (Exception e) {
+            return List.of();
+        }
+        return words;
+    }
+
+    private void showRuns(List<SpellingRun> runs) {
+        suggestionRow.removeAll();
+        if (runs.isEmpty()) {
+            return;
+        }
+        Span label = new Span("Did you mean: ");
+        label.getStyle().set("margin-right", "var(--lumo-space-s)");
+        suggestionRow.add(label);
+        for (SpellingRun run : runs) {
+            Button use = new Button(run.suggestion(), click -> applyRun(run, runs));
+            use.getStyle().set("margin-right", "var(--lumo-space-xs)").set("margin-bottom", "var(--lumo-space-xs)")
+                    .set("min-height", "2.5em");
+            suggestionRow.add(use);
+        }
+        if (runs.size() > 1) {
+            Button all = new Button("Use all", click -> applyAll(runs));
+            all.addThemeVariants(com.vaadin.flow.component.button.ButtonVariant.LUMO_TERTIARY);
+            suggestionRow.add(all);
+        }
+    }
+
+    /** Replaces one suggestion's span in the browser box; the other buttons are shifted or refreshed. */
+    private void applyRun(SpellingRun run, List<SpellingRun> runs) {
+        answerBox.getElement().executeJs("return this.__tmlReplace ? this.__tmlReplace($0, $1, $2, $3) : false",
+                run.start(), run.end(), run.currentText(), run.suggestion()).then(Boolean.class, done -> {
+                    if (Boolean.TRUE.equals(done)) {
+                        suggestionsUsed++;
+                        int delta = run.suggestion().length() - (run.end() - run.start());
+                        runs.remove(run);
+                        List<SpellingRun> shifted = new ArrayList<>();
+                        for (SpellingRun other : runs) {
+                            shifted.add(other.start() >= run.end()
+                                    ? new SpellingRun(other.start() + delta, other.end() + delta, other.currentText(), other.suggestion())
+                                    : other);
+                        }
+                        lastSuggestedFor = "";
+                        showRuns(shifted);
+                    } else {
+                        // the text under the button has changed since it was made: look again
+                        lastSuggestedFor = "";
+                        offerSpelling();
+                    }
+                });
+    }
+
+    /** Applies every suggestion, last first so earlier positions stay valid. */
+    private void applyAll(List<SpellingRun> runs) {
+        List<SpellingRun> sorted = new ArrayList<>(runs);
+        sorted.sort((a, b) -> Integer.compare(b.start(), a.start()));
+        StringBuilder script = new StringBuilder("let ok = true; ");
+        for (SpellingRun r : sorted) {
+            script.append("ok = this.__tmlReplace(").append(r.start()).append(", ").append(r.end()).append(", ")
+                    .append(json.valueToTree(r.currentText())).append(", ").append(json.valueToTree(r.suggestion()))
+                    .append(") && ok; ");
+        }
+        script.append("return ok;");
+        answerBox.getElement().executeJs(script.toString()).then(Boolean.class, done -> {
+            suggestionsUsed += sorted.size();
+            suggestionRow.removeAll();
+            lastSuggestedFor = "";
+            if (!Boolean.TRUE.equals(done)) {
+                offerSpelling();
             }
         });
     }
@@ -255,7 +335,7 @@ public class TranslationBlockView extends VerticalLayout {
                 }
             }
             boolean graderFailed = grade.verdict() == TranslationVerdict.ERROR;
-            String mode = tiles ? "TILES " : (usedSuggestion ? "SPELLING-HELP " : "");
+            String mode = tiles ? "TILES " : (suggestionsUsed > 0 ? "SPELLING-HELP " + suggestionsUsed + " " : "");
             String spellingNote = grade.hasSpellingNote()
                     ? " {SPELLING " + grade.spelling() + (grade.corrected().isBlank() ? "" : ": " + grade.corrected()) + "}" : "";
             String log = (graderFailed ? "FLAG grader unavailable: " : "") + mode + given + " [" + grade.verdict() + "]" + spellingNote;
