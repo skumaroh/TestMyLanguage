@@ -171,7 +171,7 @@ public class AudioWordsBlockView extends VerticalLayout {
         removeAll();
         add(new H2("Audio words finished"));
         add(new Paragraph("Thank you. Your answers are saved. Your results will be shown at the end of the assessment."));
-        add(new Paragraph("The next part is not ready yet."));
+        add(new Button("Continue to the translation", e -> getUI().ifPresent(ui -> ui.navigate("assessment/translation"))));
         add(new Button("Back to the welcome page", e -> getUI().ifPresent(ui -> ui.navigate("welcome"))));
     }
 
