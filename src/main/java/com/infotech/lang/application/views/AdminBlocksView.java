@@ -38,6 +38,7 @@ public class AdminBlocksView extends VerticalLayout {
         addBlock("2. Draw letters", "assessment/letters", securityService, userRepository, assessment, languageContext, true);
         addBlock("3. Audio words", "assessment/audio-words", securityService, userRepository, assessment, languageContext, true);
         addBlock("4. Translation", "assessment/translation", securityService, userRepository, assessment, languageContext, true);
+        addBlock("5. Conversation", "assessment/conversation", securityService, userRepository, assessment, languageContext, true);
     }
 
     private void addBlock(String label, String route, SecurityService securityService, UserRepository userRepository,

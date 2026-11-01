@@ -391,7 +391,8 @@ public class TranslationBlockView extends VerticalLayout {
         removeAll();
         add(new H2("Translation finished"));
         add(new Paragraph("Thank you. Your answers are saved. Your results will be shown at the end of the assessment."));
-        add(new Paragraph("The next part is not ready yet."));
+        add(new Paragraph("The next part is the conversation."));
+        add(new Button("Continue to the conversation", e -> getUI().ifPresent(ui -> ui.navigate("assessment/conversation"))));
         add(new Button("Back to the welcome page", e -> getUI().ifPresent(ui -> ui.navigate("welcome"))));
     }
 
