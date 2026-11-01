@@ -10,6 +10,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
+import java.util.Base64;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -93,12 +94,23 @@ public class MetaAiGateway implements AiGateway {
         }
     }
 
-    private String buildBody(AiRequest request) throws IOException {
+    String buildBody(AiRequest request) throws IOException {
         ObjectNode body = mapper.createObjectNode();
         body.put("model", model);
         ArrayNode messages = body.putArray("messages");
         messages.addObject().put("role", "system").put("content", request.systemPrompt());
-        messages.addObject().put("role", "user").put("content", request.userPrompt());
+        ObjectNode user = messages.addObject();
+        user.put("role", "user");
+        if (request.imagePng() == null) {
+            user.put("content", request.userPrompt());
+        } else {
+            ArrayNode parts = user.putArray("content");
+            parts.addObject().put("type", "text").put("text", request.userPrompt());
+            ObjectNode image = parts.addObject();
+            image.put("type", "image_url");
+            image.putObject("image_url").put("url",
+                    "data:image/png;base64," + Base64.getEncoder().encodeToString(request.imagePng()));
+        }
         ObjectNode format = body.putObject("response_format");
         format.put("type", "json_schema");
         ObjectNode schema = format.putObject("json_schema");

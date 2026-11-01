@@ -49,6 +49,7 @@ public class HomeView extends VerticalLayout {
         add(new RouterLink("Start: welcome and activity introductions", WelcomeView.class));
         if (isAdmin()) {
             add(new RouterLink("Admin: review the proctor texts", ProctorReviewView.class));
+            add(new RouterLink("Admin: handwriting check (Meta reads a drawing)", HandwritingCheckView.class));
         }
 
         Button logout = new Button("Sign out", e -> securityService.logout());
