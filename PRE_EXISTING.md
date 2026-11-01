@@ -18,6 +18,12 @@ License of the pre-existing code: Unlicense (public domain), see `LICENSE.md`.
 | Storage | `AzureBlobService` | Azure Blob Storage access |
 | Build and runtime | Gradle files, `Dockerfile`, Vaadin theme, `.env.example` | Build and packaging |
 
+## Later imports (each its own commit, done before new code uses the module)
+
+| Tranche | Files | Source commit | Purpose |
+| --- | --- | --- | --- |
+| 2: letter shape comparison | `data/service/LetterShapeComparisonService`, `LocalImageShapeComparisonService`, and its unit test | `88e2847103df54569f15f99a055f911e78925880` (unchanged) | Scores how closely a drawn letter matches an admin-provided reference image of the letter, with plain Java image processing (no external service, no model). In the hackathon build it is combined with a Meta vision model reading the same drawing; the Meta part is new work |
+
 ## Scrubs applied to the snapshot (the only edits to pre-existing files)
 
 | File | Change |
