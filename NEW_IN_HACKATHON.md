@@ -23,7 +23,7 @@ The pre-existing code is listed in `PRE_EXISTING.md` and is the first commit, ta
 | `ai/` (`MetaAiGateway`) | The only code that calls the Meta Model API (Muse Spark); every call is logged without prompts, answers or keys |
 | `proctor/` | Text service, validator, prompt, built-in fallbacks and background warm-up for the greeting and five activity introductions |
 | `WelcomeView`, `ProctorReviewView` | The student's welcome page (with a browser-voice Listen button, labeled not Meta) and the admin page to approve, edit or discard texts |
-| Tables | `assess_proctor_text`, `assess_ai_call_log`: see `docs/DATABASE.md`. Migrations are in the private `LanguageToolDBScripts` repository |
+| Tables | `assess_proctor_text`, `assess_ai_call_log`: the application's own tables, with proctor texts and a log of model calls. Their migration scripts are kept in a private repository |
 
 ## Planned (not yet built)
 
