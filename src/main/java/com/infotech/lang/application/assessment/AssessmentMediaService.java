@@ -29,11 +29,13 @@ public class AssessmentMediaService {
 
     public static final String AUDIO_CONTAINER = "language-tool-audio";
     public static final String IMAGE_CONTAINER = "language-tool-images";
+    public static final String REFERENCE_CONTAINER = "language-tool-letter-references";
 
     private static final Logger logger = LoggerFactory.getLogger(AssessmentMediaService.class);
 
     private final String imageConnectionString;
     private final String audioConnectionString;
+    private final String referenceConnectionString;
     private final Map<String, BlobServiceClient> clients = new ConcurrentHashMap<>();
 
     /** Letter recordings are named {@code [timestamp_]u0B95[-u0BCD].ext}: the key is the letter's code points. */
@@ -54,9 +56,11 @@ public class AssessmentMediaService {
     private volatile Instant imageIndexFailedAt;
 
     public AssessmentMediaService(@Value("${azure.storage.connection-string:}") String imageConnectionString,
-                                  @Value("${azure.storage.audio-connection-string:}") String audioConnectionString) {
+                                  @Value("${azure.storage.audio-connection-string:}") String audioConnectionString,
+                                  @Value("${azure.storage.reference-connection-string:}") String referenceConnectionString) {
         this.imageConnectionString = imageConnectionString;
         this.audioConnectionString = audioConnectionString;
+        this.referenceConnectionString = referenceConnectionString;
     }
 
     /** True for the two containers the proxy may serve for the given kind ({@code audio} or {@code image}). */
@@ -67,7 +71,8 @@ public class AssessmentMediaService {
 
     /** The blob's bytes, or empty when it does not exist or cannot be read. Never throws. */
     public Optional<byte[]> read(String container, String blobPath) {
-        String connectionString = AUDIO_CONTAINER.equals(container) ? audioConnectionString : imageConnectionString;
+        String connectionString = AUDIO_CONTAINER.equals(container) ? audioConnectionString
+                : REFERENCE_CONTAINER.equals(container) ? referenceConnectionString : imageConnectionString;
         if (connectionString == null || connectionString.isBlank()) {
             logger.warn("No Blob access configured for container {}", container);
             return Optional.empty();
