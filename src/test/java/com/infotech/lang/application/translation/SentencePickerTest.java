@@ -1,30 +1,38 @@
 package com.infotech.lang.application.translation;
 
-import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import org.junit.jupiter.api.Test;
 
 class SentencePickerTest {
 
     @Test
-    void acceptsTheCommonWaysATamilCodeIsStored() {
-        for (String code : new String[] {"ta", "ta-IN", "ta_IN", "tamil", "Tamil", " TA ", "", null}) {
-            assertTrue(SentencePicker.languageMatches(code, "tamil"), String.valueOf(code));
-        }
+    void skipsBlankLinesAndCommentsAndNumbersTheRest() {
+        List<TranslationItem> items = SentencePicker.parse(List.of("# a comment", "", "  I am a student.  ", "Come here."));
+        assertEquals(2, items.size());
+        assertEquals("I am a student.", items.get(0).english());
+        assertEquals(1L, items.get(0).id());
+        assertEquals(2L, items.get(1).id());
+        assertEquals("", items.get(1).expected());
     }
 
     @Test
-    void acceptsTheCommonWaysAHindiCodeIsStored() {
-        for (String code : new String[] {"hi", "hi-IN", "hindi", "HI"}) {
-            assertTrue(SentencePicker.languageMatches(code, "hindi"), code);
-        }
+    void theShippedListHasEnoughDifferentSentencesForTheBlock() {
+        SentencePicker picker = new SentencePicker();
+        List<TranslationItem> picked = picker.pick("tamil", 8);
+        assertEquals(8, picked.size());
+        Set<Long> ids = new HashSet<>();
+        picked.forEach(i -> ids.add(i.id()));
+        assertEquals(8, ids.size());
+        assertTrue(picked.stream().allMatch(i -> !i.english().isBlank()));
     }
 
     @Test
-    void rejectsAnotherLanguage() {
-        assertFalse(SentencePicker.languageMatches("hi", "tamil"));
-        assertFalse(SentencePicker.languageMatches("en", "hindi"));
-        assertFalse(SentencePicker.languageMatches("ta-IN", "hindi"));
+    void askingForMoreThanThereAreReturnsAll() {
+        assertTrue(new SentencePicker().pick("hindi", 1000).size() >= 20);
     }
 }

@@ -1,0 +1,27 @@
+# Level 1 translation sentences: one English sentence per line; blank lines and lines starting with # are ignored.
+# The student writes each sentence in Tamil or Hindi; the Meta model judges the meaning (there is no reference translation).
+# Keep them short and simple (present tense, everyday words, no names). Reviewed by the owner before use.
+I am a student.
+This is my house.
+The sun is hot.
+I drink water.
+The dog is big.
+She has a book.
+I like mangoes.
+We eat rice.
+The cat is under the table.
+He is my father.
+The sun sets in the west.
+I go to school.
+The flower is red.
+My mother is at home.
+Birds can fly.
+The water is cold.
+I have two hands.
+The moon comes at night.
+Come here.
+Please give me water.
+It is a big tree.
+The boy is playing.
+I see a bird.
+The milk is white.

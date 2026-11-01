@@ -29,9 +29,9 @@ import org.slf4j.LoggerFactory;
 import org.springframework.security.core.userdetails.UserDetails;
 
 /**
- * Block 4, translation: the student sees an English sentence and types its translation (with the device's own keyboard).
- * {@link TranslationGrader} judges it: an exact match is correct without a model, otherwise the Meta model judges the meaning and
- * a correct paraphrase passes. If the grader cannot be used it is tried once more; a second failure counts 0 and the answer
+ * Block 4, translation: the student sees an English sentence (from a hand-written, owner-reviewed list) and types its translation
+ * with the device's own keyboard. {@link TranslationGrader} judges it: the Meta model judges the meaning against the English
+ * sentence alone, so a correct paraphrase passes. If the grader cannot be used it is tried once more; a second failure counts 0 and the answer
  * log starts with {@code FLAG}. One point per correct sentence; correctness is not shown until the final report.
  * {@link BlockEngine} decides how many sentences are asked (4, then 4 more, always ending after 8).
  */
