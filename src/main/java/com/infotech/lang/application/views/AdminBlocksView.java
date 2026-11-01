@@ -21,7 +21,7 @@ import org.springframework.security.core.userdetails.UserDetails;
  * unfinished attempt is marked incomplete), so a block can be run again and again without going through the earlier blocks.
  */
 @Route(value = "admin/blocks", layout = MainLayout.class)
-@PageTitle("Test one block | TestMyLanguage")
+@PageTitle("Test Blocks | TestMyLanguage")
 @RolesAllowed("ADMIN")
 public class AdminBlocksView extends VerticalLayout {
 
@@ -30,7 +30,7 @@ public class AdminBlocksView extends VerticalLayout {
 
     public AdminBlocksView(SecurityService securityService, UserRepository userRepository,
                            AssessmentService assessment, LanguageContext languageContext) {
-        add(new H2("Test one block"));
+        add(new H2("Test Blocks"));
         add(new Paragraph("Each button starts a fresh test attempt and opens that block. "
                 + "At the end of a block you can still continue to the next ones. "
                 + "Test runs are saved like real ones, under your own account."));

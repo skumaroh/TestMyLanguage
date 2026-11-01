@@ -168,6 +168,7 @@ public class WordsBlockView extends VerticalLayout {
             boolean correct = WordQuestionService.isCorrect(given, current.answer());
             int duration = (int) Math.min(Integer.MAX_VALUE, System.currentTimeMillis() - shownAtMillis);
             assessment.recordAnswer(block.getId(), engine.asked() + 1, "asset:" + current.id(), given, correct, duration);
+            AdminFeedback.show(correct, correct ? "" : "expected " + current.answer());
             engine.record(correct);
             if (engine.isComplete()) {
                 assessment.finishBlock(block.getId(), engine.asked(), engine.correct(), engine.passed());
