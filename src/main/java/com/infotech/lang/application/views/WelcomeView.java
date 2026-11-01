@@ -24,7 +24,7 @@ import org.springframework.security.core.userdetails.UserDetails;
  * Welcome and activity introductions. The words are Meta-written texts an admin has approved (or a plain built-in
  * text until then). The "Listen" button uses the browser's own voice, which is not a Meta product.
  */
-@Route("welcome")
+@Route(value = "welcome", layout = MainLayout.class)
 @PageTitle("Welcome | TestMyLanguage")
 @PermitAll
 public class WelcomeView extends VerticalLayout {

@@ -34,7 +34,7 @@ import java.util.stream.Collectors;
  * check (old shape comparison weighs more, plus Meta's blind reading), (2) the old shape comparison against every letter of
  * the same group, ranked, and (3) Meta choosing among those letters. Nothing is saved except model-call log rows.
  */
-@Route("admin/handwriting-check")
+@Route(value = "admin/handwriting-check", layout = MainLayout.class)
 @PageTitle("Handwriting check | TestMyLanguage")
 @RolesAllowed("ADMIN")
 public class HandwritingCheckView extends VerticalLayout {

@@ -35,7 +35,7 @@ import org.springframework.security.core.userdetails.UserDetails;
  * One point per correct word, none for a wrong one; correctness is not shown until the final report.
  * {@link BlockEngine} decides how many words are asked (4, then 4 more when fewer than 3 of the first 4 are right).
  */
-@Route("assessment/words")
+@Route(value = "assessment/words", layout = MainLayout.class)
 @PageTitle("Words | TestMyLanguage")
 @PermitAll
 public class WordsBlockView extends VerticalLayout {

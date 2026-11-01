@@ -37,7 +37,7 @@ import org.springframework.security.core.userdetails.UserDetails;
  * letter, which is not counted as a question; a second miss counts 0 and is flagged in the answer log for a teacher.
  * Pictures are not stored. {@link BlockEngine} decides how many letters are asked, as in the words block.
  */
-@Route("assessment/letters")
+@Route(value = "assessment/letters", layout = MainLayout.class)
 @PageTitle("Letters | TestMyLanguage")
 @PermitAll
 public class DrawLettersBlockView extends VerticalLayout {
