@@ -10,6 +10,7 @@ import com.infotech.lang.application.handwriting.ReferenceImages;
 import com.infotech.lang.application.handwriting.ShapeRanking;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.H2;
+import com.vaadin.flow.component.html.Image;
 import com.vaadin.flow.component.html.Paragraph;
 import com.vaadin.flow.component.html.Pre;
 import com.vaadin.flow.component.notification.Notification;
@@ -20,6 +21,8 @@ import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import jakarta.annotation.security.RolesAllowed;
+import java.util.ArrayList;
+import java.util.Base64;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -36,7 +39,9 @@ import java.util.stream.Collectors;
 @RolesAllowed("ADMIN")
 public class HandwritingCheckView extends VerticalLayout {
 
-    private static final int MAX_CANDIDATES = 24;
+    private static final int MAX_CANDIDATES = 40;
+    /** Meta chooses among the old method's best few letters plus the expected one: a short list is faster and easier. */
+    private static final int SHORTLIST = 5;
 
     private final CombinedHandwritingCheck check;
     private final ReferenceImages references;
@@ -46,6 +51,8 @@ public class HandwritingCheckView extends VerticalLayout {
     private final TextField expected = new TextField("The letter you meant to draw");
     private final Paragraph result = new Paragraph("Draw one character, then press Check.");
     private final Pre details = new Pre();
+    private final Image sent = new Image();
+    private final Image reference = new Image();
 
     public HandwritingCheckView(CombinedHandwritingCheck check, ReferenceImages references,
                                 LetterShapeComparisonService shape, HandwritingReader reader,
@@ -59,6 +66,10 @@ public class HandwritingCheckView extends VerticalLayout {
         setMaxWidth("720px");
         getStyle().set("margin", "0 auto");
         details.getStyle().set("white-space", "pre-wrap").set("width", "100%");
+        sent.getStyle().set("max-width", "256px").set("border", "1px solid #9aa0a6");
+        sent.setVisible(false);
+        reference.getStyle().set("max-width", "256px").set("border", "1px solid #9aa0a6").set("background", "#fff");
+        reference.setVisible(false);
 
         DrawingPad pad = new DrawingPad();
         pad.addDrawingExportedListener(e -> run(e.png(), e.isBlank()));
@@ -69,7 +80,8 @@ public class HandwritingCheckView extends VerticalLayout {
                 new Paragraph("Three results per drawing: the combined check (old shape comparison weighs more, plus Meta "
                         + "reading blind), the old shape comparison against every letter of the same group, and Meta choosing "
                         + "among those letters. Nothing is stored except model-call log rows. A check takes several seconds."),
-                expected, pad, new HorizontalLayout(clear, checkButton), result, details);
+                expected, pad, new HorizontalLayout(clear, checkButton), result, new Paragraph("The picture that was sent, and the reference image of the letter you meant:"),
+                new HorizontalLayout(sent, reference), details);
     }
 
     private void run(byte[] png, boolean blank) {
@@ -82,8 +94,27 @@ public class HandwritingCheckView extends VerticalLayout {
             Notification.show("Type the letter you meant to draw.");
             return;
         }
+        sent.setSrc("data:image/png;base64," + Base64.getEncoder().encodeToString(png));
+        sent.setAlt("the drawing that was sent");
+        sent.setVisible(true);
+        references.pngFor(meant).ifPresentOrElse(ref -> {
+            reference.setSrc("data:image/png;base64," + Base64.getEncoder().encodeToString(ref));
+            reference.setAlt("reference image of " + meant);
+            reference.setVisible(true);
+        }, () -> reference.setVisible(false));
+
         List<LetterCandidate> candidates = references.candidatesFor(meant, MAX_CANDIDATES);
-        List<String> options = candidates.stream().map(LetterCandidate::letter).collect(Collectors.toList());
+        List<ShapeRanking.Ranked> ranked = candidates.size() < 2 ? List.of() : ShapeRanking.rank(shape, png, candidates);
+        // Meta chooses among the old method's best few letters plus the expected one
+        List<String> options = new ArrayList<>();
+        for (ShapeRanking.Ranked x : ranked) {
+            if (options.size() < SHORTLIST) {
+                options.add(x.letter());
+            }
+        }
+        if (!ranked.isEmpty() && !options.contains(meant) && candidates.stream().anyMatch(c -> c.letter().equals(meant))) {
+            options.add(meant);
+        }
 
         CompletableFuture<CombinedHandwritingCheck.Result> combinedFuture =
                 CompletableFuture.supplyAsync(() -> check.check(png, language, meant));
@@ -105,7 +136,6 @@ public class HandwritingCheckView extends VerticalLayout {
         if (options.size() < 2) {
             text.append("Not enough reference images in this letter's group to rank (found ").append(options.size()).append(").\n");
         } else {
-            List<ShapeRanking.Ranked> ranked = ShapeRanking.rank(shape, png, candidates);
             text.append("Old shape comparison against ").append(ranked.size()).append(" letters of the group (best first):\n");
             ranked.stream().limit(6).forEach(x -> text.append(String.format(Locale.ROOT, "  %s  %.2f%s%n", x.letter(), x.score(),
                     x.letter().equals(meant) ? "   <- the letter you meant" : "")));
@@ -113,7 +143,8 @@ public class HandwritingCheckView extends VerticalLayout {
             if (choice == null || !choice.ok()) {
                 text.append("Meta choosing among the letters: no answer").append(choice == null ? "" : " (" + choice.error() + ")").append('\n');
             } else {
-                text.append("Meta choosing among the letters (").append(choice.latencyMs()).append(" ms):\n");
+                text.append("Meta choosing among the old method's best ").append(options.size()).append(" (").append(String.join(" ", options))
+                        .append(") (").append(choice.latencyMs()).append(" ms):\n");
                 Map<String, Double> sorted = choice.confidences();
                 sorted.entrySet().stream().sorted(Map.Entry.<String, Double>comparingByValue().reversed()).limit(6)
                         .forEach(en -> text.append(String.format(Locale.ROOT, "  %s  %.2f%s%n", en.getKey(), en.getValue(),
