@@ -52,6 +52,7 @@ public class HandwritingCheckView extends VerticalLayout {
     private final Paragraph result = new Paragraph("Draw one character, then press Check.");
     private final Pre details = new Pre();
     private final Image sent = new Image();
+    private final Image reference = new Image();
 
     public HandwritingCheckView(CombinedHandwritingCheck check, ReferenceImages references,
                                 LetterShapeComparisonService shape, HandwritingReader reader,
@@ -67,6 +68,8 @@ public class HandwritingCheckView extends VerticalLayout {
         details.getStyle().set("white-space", "pre-wrap").set("width", "100%");
         sent.getStyle().set("max-width", "256px").set("border", "1px solid #9aa0a6");
         sent.setVisible(false);
+        reference.getStyle().set("max-width", "256px").set("border", "1px solid #9aa0a6").set("background", "#fff");
+        reference.setVisible(false);
 
         DrawingPad pad = new DrawingPad();
         pad.addDrawingExportedListener(e -> run(e.png(), e.isBlank()));
@@ -77,7 +80,8 @@ public class HandwritingCheckView extends VerticalLayout {
                 new Paragraph("Three results per drawing: the combined check (old shape comparison weighs more, plus Meta "
                         + "reading blind), the old shape comparison against every letter of the same group, and Meta choosing "
                         + "among those letters. Nothing is stored except model-call log rows. A check takes several seconds."),
-                expected, pad, new HorizontalLayout(clear, checkButton), result, new Paragraph("The picture that was sent:"), sent, details);
+                expected, pad, new HorizontalLayout(clear, checkButton), result, new Paragraph("The picture that was sent, and the reference image of the letter you meant:"),
+                new HorizontalLayout(sent, reference), details);
     }
 
     private void run(byte[] png, boolean blank) {
@@ -93,6 +97,11 @@ public class HandwritingCheckView extends VerticalLayout {
         sent.setSrc("data:image/png;base64," + Base64.getEncoder().encodeToString(png));
         sent.setAlt("the drawing that was sent");
         sent.setVisible(true);
+        references.pngFor(meant).ifPresentOrElse(ref -> {
+            reference.setSrc("data:image/png;base64," + Base64.getEncoder().encodeToString(ref));
+            reference.setAlt("reference image of " + meant);
+            reference.setVisible(true);
+        }, () -> reference.setVisible(false));
 
         List<LetterCandidate> candidates = references.candidatesFor(meant, MAX_CANDIDATES);
         List<ShapeRanking.Ranked> ranked = candidates.size() < 2 ? List.of() : ShapeRanking.rank(shape, png, candidates);
