@@ -8,16 +8,19 @@ import com.infotech.lang.application.data.entity.User;
 import com.infotech.lang.application.data.repository.UserRepository;
 import com.infotech.lang.application.security.SecurityService;
 import com.infotech.lang.application.translation.SentencePicker;
+import com.infotech.lang.application.translation.SpellingSuggester;
 import com.infotech.lang.application.translation.TileQuestion;
 import com.infotech.lang.application.translation.TranslationGrader;
 import com.infotech.lang.application.translation.TranslationItem;
 import com.infotech.lang.application.translation.TranslationVerdict;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.dependency.JsModule;
+import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.html.H3;
 import com.vaadin.flow.component.html.Paragraph;
+import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.orderedlayout.FlexComponent.Alignment;
 import com.vaadin.flow.component.orderedlayout.FlexLayout;
@@ -59,6 +62,10 @@ public class TranslationBlockView extends VerticalLayout {
     private final BlockEngine engine = new BlockEngine();
 
     private final SentencePicker picker;
+    private final SpellingSuggester speller;
+    private Div suggestionRow;
+    private String lastSuggestedFor = "";
+    private boolean usedSuggestion;
 
     private List<TranslationItem> items = List.of();
     private List<TranslationItem> pool = List.of();
@@ -76,10 +83,12 @@ public class TranslationBlockView extends VerticalLayout {
                                 SentencePicker picker,
                                 AssessmentService assessment,
                                 TranslationGrader grader,
+                                SpellingSuggester speller,
                                 LanguageContext languageContext) {
         this.assessment = assessment;
         this.grader = grader;
         this.picker = picker;
+        this.speller = speller;
         this.language = languageContext.getLanguage();
         setAlignItems(Alignment.CENTER);
         setMaxWidth("720px");
@@ -132,12 +141,58 @@ public class TranslationBlockView extends VerticalLayout {
         answerBox.getStyle().set("font-size", "1.3em");
         Paragraph hint = new Paragraph("Tip: type " + name + " words in English letters (for example "
                 + ("hindi".equalsIgnoreCase(language) ? "\"mai paanee peetaa hoon\"" : "\"naan thanneer kudikkiren\"")
-                + ") and they turn into " + name + " letters. You can also use your own " + name + " keyboard.");
+                + ") and they turn into " + name + " letters. When you pause, Meta may suggest a better spelling; tap it to use it. "
+                + ("hindi".equalsIgnoreCase(language) ? "Use \"aa\", \"ee\", \"oo\" for long vowels. "
+                        : "Use \"aa\", \"ee\", \"oo\" for long vowels and \"ae\" for ஏ. ")
+                + "You can also use your own " + name + " keyboard.");
         hint.getStyle().set("color", "var(--lumo-secondary-text-color)").set("font-size", "var(--lumo-font-size-s)");
         checkButton = new Button("Check", e -> submit());
-        add(answerBox, hint, checkButton);
+        suggestionRow = new Div();
+        suggestionRow.getStyle().set("min-height", "2.5em");
+        usedSuggestion = false;
+        lastSuggestedFor = "";
+        answerBox.setValueChangeMode(ValueChangeMode.LAZY);
+        answerBox.setValueChangeTimeout(900);
+        answerBox.addValueChangeListener(e -> {
+            suggestionRow.removeAll();
+            if (e.isFromClient()) {
+                offerSpelling();
+            }
+        });
+        add(answerBox, suggestionRow, hint, checkButton);
         String tag = "hindi".equalsIgnoreCase(language) ? "hindi" : "tamil";
         answerBox.getElement().executeJs("window.tmlTransliterate && window.tmlTransliterate.attach(this, $0)", tag);
+    }
+
+    /**
+     * After the learner pauses, asks Meta for the best script spelling of the English letters typed and offers it as a
+     * "Did you mean" button. The text is never changed unless the learner taps it.
+     */
+    private void offerSpelling() {
+        answerBox.getElement().executeJs("return this.getAttribute('data-raw') || ''").then(String.class, raw -> {
+            String typed = raw == null ? "" : raw.trim();
+            String shown = answerBox.getValue() == null ? "" : answerBox.getValue();
+            if (typed.isEmpty() || typed.equals(lastSuggestedFor)) {
+                return;
+            }
+            lastSuggestedFor = typed;
+            try {
+                speller.suggest(language, typed, shown).ifPresent(suggestion -> {
+                    suggestionRow.removeAll();
+                    Button use = new Button(suggestion, click -> {
+                        answerBox.setValue(suggestion);
+                        usedSuggestion = true;
+                        suggestionRow.removeAll();
+                        answerBox.getElement().executeJs("this.__tmlReset && this.__tmlReset()");
+                    });
+                    Span label = new Span("Did you mean: ");
+                    label.getStyle().set("margin-right", "var(--lumo-space-s)");
+                    suggestionRow.add(label, use);
+                });
+            } catch (RuntimeException ex) {
+                logger.warn("Spelling help failed", ex);
+            }
+        });
     }
 
     private void showTiles() {
@@ -200,7 +255,7 @@ public class TranslationBlockView extends VerticalLayout {
                 }
             }
             boolean graderFailed = grade.verdict() == TranslationVerdict.ERROR;
-            String mode = tiles ? "TILES " : "";
+            String mode = tiles ? "TILES " : (usedSuggestion ? "SPELLING-HELP " : "");
             String log = (graderFailed ? "FLAG grader unavailable: " : "") + mode + given + " [" + grade.verdict() + "]";
             int duration = (int) Math.min(Integer.MAX_VALUE, System.currentTimeMillis() - shownAtMillis);
             assessment.recordAnswer(block.getId(), engine.asked() + 1, "sentence:" + current.id(), log, grade.correct(), duration);
