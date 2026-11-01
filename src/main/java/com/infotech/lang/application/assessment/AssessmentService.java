@@ -73,4 +73,10 @@ public class AssessmentService {
         return attempts.findFirstByUserIdAndStatusOrderByIdDesc(userId, "IN_PROGRESS")
                 .orElseGet(() -> startAttempt(userId, language, level));
     }
+
+    /** The items already asked in this attempt, so a later block can avoid repeating them. */
+    @Transactional(readOnly = true)
+    public java.util.Set<String> itemRefsInAttempt(Long attemptId) {
+        return new java.util.HashSet<>(answers.findItemRefsByAttempt(attemptId));
+    }
 }
