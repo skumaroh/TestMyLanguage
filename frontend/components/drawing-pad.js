@@ -1,5 +1,5 @@
 // A small pad for drawing one character with a finger, pen or mouse. Exports a white-background PNG
-// (longest side 256 px) in a 'drawing-exported' event, together with whether it is blank and the stroke count.
+// (longest side 512 px) in a 'drawing-exported' event, together with whether it is blank and the stroke count.
 class DrawingPad extends HTMLElement {
   constructor() {
     super();
@@ -57,7 +57,7 @@ class DrawingPad extends HTMLElement {
     this.drawing = true;
     this.strokes += 1;
     const p = this.point(e);
-    this.ctx.lineWidth = Math.max(4, this.canvas.width / 24);
+    this.ctx.lineWidth = Math.max(3, this.canvas.width / 36);
     this.ctx.lineCap = 'round';
     this.ctx.lineJoin = 'round';
     this.ctx.strokeStyle = '#000';
@@ -85,7 +85,7 @@ class DrawingPad extends HTMLElement {
   }
 
   exportDrawing() {
-    const max = 256;
+    const max = 512;
     const scale = Math.min(1, max / this.canvas.width);
     const out = document.createElement('canvas');
     out.width = Math.max(1, Math.round(this.canvas.width * scale));

@@ -59,4 +59,28 @@ class HandwritingReaderTest {
         assertTrue(seen[0].userPrompt().contains("Devanagari"));
         assertFalse(seen[0].userPrompt().contains("meant to draw"));
     }
+
+    @Test
+    void readsAConfidenceForEachOfferedLetterAndIgnoresOthers() {
+        HandwritingReader reader = new HandwritingReader(request -> AiResult.failure(0, 0, "x"));
+        HandwritingReader.Choice choice = reader.parseChoices(
+                "{\"choices\":[{\"character\":\"அ\",\"confidence\":0.35},{\"character\":\"ஆ\",\"confidence\":0.6},"
+                        + "{\"character\":\"க\",\"confidence\":0.05}]}", java.util.List.of("அ", "ஆ"), 5);
+        assertTrue(choice.ok());
+        assertEquals(2, choice.confidences().size());
+        assertEquals("ஆ", choice.best());
+    }
+
+    @Test
+    void theChoiceRequestListsTheOptionsAndCarriesTheDrawing() {
+        AiRequest[] seen = new AiRequest[1];
+        HandwritingReader reader = new HandwritingReader(request -> {
+            seen[0] = request;
+            return AiResult.success("{\"choices\":[]}", 200, 1, 1, 1);
+        });
+        reader.choose(new byte[] {7}, "tamil", java.util.List.of("அ", "ஆ"));
+        assertEquals("HANDWRITING_CHOOSE", seen[0].purpose());
+        assertTrue(seen[0].userPrompt().contains("அ ஆ"));
+        assertEquals(1, seen[0].imagePng().length);
+    }
 }

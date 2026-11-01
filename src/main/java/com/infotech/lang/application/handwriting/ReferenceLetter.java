@@ -25,6 +25,27 @@ public class ReferenceLetter {
     @Column(name = "curriculum_id")
     private Long curriculumId;
 
+    @Column(name = "category")
+    private String category;
+
+    @Column(name = "sub_category")
+    private String subCategory;
+
+    @Column(name = "display_order")
+    private int displayOrder;
+
+    public String getLetter() {
+        return letter;
+    }
+
+    public String getCategory() {
+        return category;
+    }
+
+    public String getSubCategory() {
+        return subCategory;
+    }
+
     public String getReferenceBlobUrl() {
         return referenceBlobUrl;
     }
