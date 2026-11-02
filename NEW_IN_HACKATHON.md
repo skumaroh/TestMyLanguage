@@ -41,6 +41,14 @@ The pre-existing code is listed in `PRE_EXISTING.md` and is the first commit, ta
 | `ReportView`, `HistoryView` | The student's results page (level result, points per part, summary, every question with the expected answer and notes) and the list of past results |
 | Table | `assess_report` (stored report snapshot and summary), migration V087 in the private `LanguageToolDBScripts` repository |
 
+## Video comprehension
+
+| Item | What it is |
+| --- | --- |
+| `video/` (`ClipAnalyzer`, `VideoLibrary`, `VideoPicker`), `ClipAdminView`, `VideoBlockView` | A library of short silent action clips. The learner watches a clip and says or writes what is happening. **Meta Muse Spark watches each clip through the Model API** (video input) and drafts the English description, the answer in Tamil or Hindi, accepted variants and a clarity check; an admin reviews and verifies; only verified clips are used |
+| Clips themselves | **Made outside the API** (Meta Muse in a chat session); Meta's Model API has no video generation. Stored in Azure Blob Storage under `assessment-clips/` |
+| Table | `assess_video_clip`, migration V088 in the private `LanguageToolDBScripts` repository |
+
 ## Planned (not yet built)
 
 Assessment engine and state machine, five activities, Meta model gateway (Muse Spark, Muse Voice Transcribe), semantic grading,

@@ -30,4 +30,21 @@ class MetaAiGatewayBodyTest {
         assertEquals("image_url", parts.path(1).path("type").asText());
         assertEquals("data:image/png;base64,AQID", parts.path(1).path("image_url").path("url").asText());
     }
+
+    @Test
+    void aRequestWithAClipSendsTextAndAnInlineVideo() throws Exception {
+        AiRequest request = AiRequest.withMedia("T", "sys", "task", schema, new byte[] {1, 2, 3}, true, 30);
+        JsonNode parts = mapper.readTree(gateway.buildBody(request)).path("messages").path(1).path("content");
+        assertEquals("text", parts.path(0).path("type").asText());
+        assertEquals("video_url", parts.path(1).path("type").asText());
+        assertEquals("data:video/mp4;base64,AQID", parts.path(1).path("video_url").path("url").asText());
+        assertEquals(2, parts.size());
+    }
+
+    @Test
+    void aPictureRequestMadeWithMediaStillUsesTheImagePart() throws Exception {
+        AiRequest request = AiRequest.withMedia("T", "sys", "task", schema, new byte[] {1, 2, 3}, false, 30);
+        JsonNode parts = mapper.readTree(gateway.buildBody(request)).path("messages").path(1).path("content");
+        assertEquals("image_url", parts.path(1).path("type").asText());
+    }
 }

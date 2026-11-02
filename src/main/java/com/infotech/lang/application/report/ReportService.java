@@ -13,6 +13,7 @@ import com.infotech.lang.application.conversation.ConversationObjective;
 import com.infotech.lang.application.conversation.ConversationObjectiveRepository;
 import com.infotech.lang.application.translation.SentencePicker;
 import com.infotech.lang.application.translation.TranslationItem;
+import com.infotech.lang.application.video.VideoClipRepository;
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
@@ -42,19 +43,21 @@ public class ReportService {
     private final AssessWordRepository words;
     private final SentencePicker sentences;
     private final ConversationObjectiveRepository objectives;
+    private final VideoClipRepository videoClips;
     private final ReportSummaryWriter writer;
     private final JdbcTemplate jdbc;
     private final ObjectMapper mapper = new ObjectMapper();
 
     public ReportService(AssessAttemptRepository attempts, AssessBlockResultRepository blocks, AssessAnswerRepository answers,
                          AssessWordRepository words, SentencePicker sentences, ConversationObjectiveRepository objectives,
-                         ReportSummaryWriter writer, JdbcTemplate jdbc) {
+                         VideoClipRepository videoClips, ReportSummaryWriter writer, JdbcTemplate jdbc) {
         this.attempts = attempts;
         this.blocks = blocks;
         this.answers = answers;
         this.words = words;
         this.sentences = sentences;
         this.objectives = objectives;
+        this.videoClips = videoClips;
         this.writer = writer;
         this.jdbc = jdbc;
     }
@@ -140,6 +143,17 @@ public class ReportService {
                 asked = "WORDS".equals(blockCode) ? "Build the word" : "Listen and build the word";
                 expected = parts.length > 1 ? wordAnswer(parts[1]) : null;
             }
+            case "VIDEO" -> {
+                asked = "What is happening in the clip?";
+                var clip = parts.length > 1 ? clipOf(parts[1]) : null;
+                if (clip != null) {
+                    asked += " (" + clip.getEnglish() + ")";
+                    expected = clip.getExpectedText();
+                }
+                if (!log.spellingCorrected().isBlank()) {
+                    notes.add("Correct spelling: " + log.spellingCorrected());
+                }
+            }
             case "DRAW_LETTERS" -> {
                 asked = "Draw the letter " + (parts.length > 1 ? parts[1] : "");
                 expected = parts.length > 1 ? parts[1] : null;
@@ -182,6 +196,14 @@ public class ReportService {
     private String wordAnswer(String id) {
         try {
             return words.findById(Long.parseLong(id)).map(w -> w.getAnswerText()).orElse(null);
+        } catch (NumberFormatException e) {
+            return null;
+        }
+    }
+
+    private com.infotech.lang.application.video.VideoClip clipOf(String id) {
+        try {
+            return videoClips.findById(Long.parseLong(id)).orElse(null);
         } catch (NumberFormatException e) {
             return null;
         }

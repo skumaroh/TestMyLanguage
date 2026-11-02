@@ -47,6 +47,26 @@ public class AdminBlocksView extends VerticalLayout {
         addBlock("3. Audio words", "assessment/audio-words", securityService, userRepository, assessment, languageContext, true);
         addBlock("4. Translation", "assessment/translation", securityService, userRepository, assessment, languageContext, true);
         addConversation(securityService, userRepository, assessment, languageContext, library);
+        addVideo(securityService, userRepository, assessment, languageContext);
+    }
+
+    private void addVideo(SecurityService securityService, UserRepository userRepository, AssessmentService assessment,
+                          LanguageContext languageContext) {
+        add(new Button("6. Video (any verified clips)", e -> {
+            try {
+                UserDetails user = securityService.getAuthenticatedUser();
+                UUID userId = user == null ? null
+                        : userRepository.findByEmailIgnoreCase(user.getUsername()).map(User::getId).orElse(null);
+                if (userId == null) {
+                    Notification.show("Please sign in again.");
+                    return;
+                }
+                assessment.startAttempt(userId, languageContext.getLanguage(), LEVEL);
+                getUI().ifPresent(ui -> ui.navigate("assessment/video", QueryParameters.simple(Map.of("test", "1"))));
+            } catch (RuntimeException ex) {
+                Notification.show("Could not start the test attempt.");
+            }
+        }));
     }
 
     /** A choice in the conversation list: a specific conversation, or (id null) any verified one. */

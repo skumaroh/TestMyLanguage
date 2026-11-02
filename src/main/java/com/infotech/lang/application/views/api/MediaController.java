@@ -51,7 +51,8 @@ public class MediaController {
         String container = rest.substring(0, slash);
         String blob = rest.substring(slash + 1);
         if (!AssessmentMediaService.isAllowed(kind, container) || blob.startsWith("/")
-                || Arrays.asList(blob.split("/")).contains("..")) {
+                || Arrays.asList(blob.split("/")).contains("..")
+                || ("video".equals(kind) && !blob.startsWith(AssessmentMediaService.VIDEO_PREFIX))) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         }
         Optional<byte[]> data = media.read(container, blob);
@@ -59,7 +60,8 @@ public class MediaController {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         }
         byte[] bytes = data.get();
-        MediaType type = contentType(blob);
+        MediaType type = "video".equals(kind) && blob.toLowerCase(Locale.ROOT).endsWith(".mp4")
+                ? MediaType.parseMediaType("video/mp4") : contentType(blob);
         CacheControl cache = CacheControl.maxAge(1, TimeUnit.DAYS).cachePrivate();
         long[] window = parseRange(range, bytes.length);
         if (window == null) {

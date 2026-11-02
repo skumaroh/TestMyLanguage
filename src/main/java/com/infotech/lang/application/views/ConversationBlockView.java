@@ -14,6 +14,7 @@ import com.infotech.lang.application.data.repository.UserRepository;
 import com.infotech.lang.application.report.ReportService;
 import com.infotech.lang.application.security.SecurityService;
 import com.infotech.lang.application.translation.SpellingSuggester;
+import com.infotech.lang.application.video.VideoPicker;
 import com.infotech.lang.application.voice.SpeechRegistry;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
@@ -68,6 +69,7 @@ public class ConversationBlockView extends VerticalLayout implements BeforeEnter
     private final ConversationPicker conversationPicker;
     private final SpeechRegistry speechRegistry;
     private final ReportService reportService;
+    private final VideoPicker videoPicker;
 
     private ConversationPicker.Picked picked;
     private AssessBlockResult block;
@@ -94,6 +96,7 @@ public class ConversationBlockView extends VerticalLayout implements BeforeEnter
                                  SpeechToText speech,
                                  SpeechRegistry speechRegistry,
                                  ReportService reportService,
+                                 VideoPicker videoPicker,
                                  LanguageContext languageContext) {
         this.assessment = assessment;
         this.grader = grader;
@@ -104,6 +107,7 @@ public class ConversationBlockView extends VerticalLayout implements BeforeEnter
         this.conversationPicker = picker;
         this.speechRegistry = speechRegistry;
         this.reportService = reportService;
+        this.videoPicker = videoPicker;
         this.language = languageContext.getLanguage();
         setAlignItems(Alignment.CENTER);
         setMaxWidth("760px");
@@ -298,15 +302,28 @@ public class ConversationBlockView extends VerticalLayout implements BeforeEnter
         transcript.add(bubble(c.getPersonaName() + ": " + c.getClosingLine(), c.getClosingLine(), true));
         add(new H2("Conversation finished"));
         add(new Paragraph("Thank you. Your answers are saved. Your results will be shown at the end of the assessment."));
-        // the last part today: complete the attempt (totals, level result, stored report) and offer the results
         Long attemptId = block.getAttemptId();
+        boolean videoNext = false;
         try {
-            reportService.complete(attemptId);
-            add(new Button("See your results", e -> getUI().ifPresent(ui -> ui.navigate("assessment/report",
-                    com.vaadin.flow.router.QueryParameters.simple(java.util.Map.of("attempt", String.valueOf(attemptId)))))));
+            videoNext = videoPicker.isAvailable(language, LEVEL);
         } catch (RuntimeException e) {
-            logger.error("Could not complete the attempt", e);
-            add(new Paragraph("Your answers are saved, but the results could not be prepared right now."));
+            logger.warn("Could not check for video clips ({})", e.getClass().getSimpleName());
+        }
+        if (videoNext) {
+            // the video is the last part: the attempt is completed there
+            add(new Paragraph("The next part is a short video."));
+            add(new Button("Continue to the video", e -> getUI().ifPresent(ui -> ui.navigate("assessment/video"))));
+        }
+        if (!videoNext || MainLayout.isAdmin()) {
+            try {
+                reportService.complete(attemptId);
+                add(new Button(videoNext ? "Finish here and see the results (admin)" : "See your results",
+                        e -> getUI().ifPresent(ui -> ui.navigate("assessment/report",
+                                com.vaadin.flow.router.QueryParameters.simple(java.util.Map.of("attempt", String.valueOf(attemptId)))))));
+            } catch (RuntimeException e) {
+                logger.error("Could not complete the attempt", e);
+                add(new Paragraph("Your answers are saved, but the results could not be prepared right now."));
+            }
         }
         add(new Button("Back to the welcome page", e -> getUI().ifPresent(ui -> ui.navigate("welcome"))));
     }
