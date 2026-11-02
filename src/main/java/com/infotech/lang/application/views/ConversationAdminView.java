@@ -171,7 +171,7 @@ public class ConversationAdminView extends VerticalLayout {
 
         TextField title = field("Scenario (English)", c.getScenarioTitle());
         TextField persona = field("Persona name (" + language + ")", c.getPersonaName());
-        TextArea description = area("Who the persona is (English)", c.getPersonaDescription(), "70px");
+        TextArea description = area("Who the persona is (English text, or a JSON profile of the persona)", c.getPersonaDescription(), "220px");
         TextArea scene = area("Note shown to the learner (English)", c.getSceneNote(), "70px");
         TextArea intro = area("Opening line (" + language + ")", c.getIntroLine(), "70px");
         TextArea introEn = area("Opening line (English)", c.getIntroEnglish(), "60px");

@@ -73,6 +73,8 @@ public class ConversationBlockView extends VerticalLayout implements BeforeEnter
     private ConversationPicker.Picked picked;
     private AssessBlockResult block;
     private final List<ConversationTurnGrader.Line> history = new ArrayList<>();
+    /** Positions of the objectives the learner has reached so far, in whatever order. */
+    private final java.util.Set<Integer> covered = new java.util.HashSet<>();
     private String asked = "";
     private String askedEnglish = "";
     private boolean hintUsed;
@@ -231,12 +233,21 @@ public class ConversationBlockView extends VerticalLayout implements BeforeEnter
         guard.stop();
         try {
             int index = engine.asked();
-            ConversationObjective current = picked.objectives().get(index);
-            ConversationObjective next = index + 1 < picked.objectives().size() ? picked.objectives().get(index + 1) : null;
-            ConversationTurnGrader.Turn turn = grader.grade(language, picked.conversation(), current, next, asked, history, given);
-            if ("ERROR".equals(turn.verdict())) {
-                turn = grader.grade(language, picked.conversation(), current, next, asked, history, given);
+            List<ConversationObjective> open = picked.objectives().stream().filter(o -> !covered.contains(o.getPosition())).toList();
+            if (open.isEmpty()) {
+                open = List.of(picked.objectives().get(Math.min(index, picked.objectives().size() - 1)));
             }
+            ConversationObjective current = open.get(0);
+            List<ConversationObjective> upcoming = open.subList(1, open.size());
+            ConversationTurnGrader.Turn turn = grader.grade(language, picked.conversation(), current, upcoming, asked, history, given);
+            if ("ERROR".equals(turn.verdict())) {
+                turn = grader.grade(language, picked.conversation(), current, upcoming, asked, history, given);
+            }
+            if (turn.met()) {
+                covered.add(current.getPosition());
+            }
+            covered.addAll(turn.covered());
+            ConversationObjective next = picked.objectives().stream().filter(o -> !covered.contains(o.getPosition())).findFirst().orElse(null);
             boolean graderFailed = "ERROR".equals(turn.verdict());
             String prefix = answerBox.logPrefix(given) + (hintUsed ? "HINT " : "");
             String flag = index == 0 && !picked.flag().isEmpty() ? "FLAG " + picked.flag() + " conversation: " : "";
@@ -253,6 +264,16 @@ public class ConversationBlockView extends VerticalLayout implements BeforeEnter
             engine.record(turn.met());
             history.add(new ConversationTurnGrader.Line(false, given));
             transcript.add(bubble(given, given, false));
+            if (next == null && !engine.isComplete() && !turn.reply().isBlank()) {
+                // every goal was reached: show the persona's wrap-up, credit the turns that are left, and close
+                history.add(new ConversationTurnGrader.Line(true, turn.reply()));
+                transcript.add(bubble(c0().getPersonaName() + ": " + turn.reply(), turn.reply(), true));
+                while (!engine.isComplete()) {
+                    assessment.recordAnswer(block.getId(), engine.asked() + 1, itemRef(engine.asked() + 1),
+                            "[COVERED: all goals reached earlier]", true, 0);
+                    engine.record(true);
+                }
+            }
             if (engine.isComplete()) {
                 finishBlock();
             } else {
@@ -287,6 +308,10 @@ public class ConversationBlockView extends VerticalLayout implements BeforeEnter
             logger.error("Could not end the conversation", e);
             Notification.show("Sorry, something went wrong. Please try again.");
         }
+    }
+
+    private Conversation c0() {
+        return picked.conversation();
     }
 
     private String itemRef(int position) {
