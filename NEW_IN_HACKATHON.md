@@ -33,6 +33,14 @@ The pre-existing code is listed in `PRE_EXISTING.md` and is the first commit, ta
 | `tts/` | A small speech service built on Meta's open-source MMS-TTS models (`facebook/mms-tts-tam`, `facebook/mms-tts-hin`), downloaded unmodified from Hugging Face when the image is built. **Licence: CC-BY-NC 4.0 (non-commercial)**; to be reviewed before any commercial use |
 | `ai/MmsTextToSpeech`, `voice/SpeechRegistry`, `views/api/TtsController`, `SpeakButton` | The Listen buttons play that voice; lines are looked up by a short key so text never appears in a web address. If the service is unreachable the button uses the browser's own voice |
 
+## Final report and history
+
+| Item | What it is |
+| --- | --- |
+| `report/` (`ReportService`, `ReportMath`, `AnswerLog`, `ReportSnapshot`, `ReportSummaryWriter`) | Completes an attempt (totals, percent, level result at 75% overall), builds the report, stores a snapshot of it, and asks Meta (Muse Spark) for a short written summary from the computed numbers only |
+| `ReportView`, `HistoryView` | The student's results page (level result, points per part, summary, every question with the expected answer and notes) and the list of past results |
+| Table | `assess_report` (stored report snapshot and summary), migration V087 in the private `LanguageToolDBScripts` repository |
+
 ## Planned (not yet built)
 
 Assessment engine and state machine, five activities, Meta model gateway (Muse Spark, Muse Voice Transcribe), semantic grading,

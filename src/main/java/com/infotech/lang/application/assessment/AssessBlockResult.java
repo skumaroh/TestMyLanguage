@@ -72,4 +72,32 @@ public class AssessBlockResult {
     public void setFinishedAt(OffsetDateTime finishedAt) {
         this.finishedAt = finishedAt;
     }
+
+    public Long getAttemptId() {
+        return attemptId;
+    }
+
+    public String getBlockCode() {
+        return blockCode;
+    }
+
+    public int getBlockOrder() {
+        return blockOrder;
+    }
+
+    public int getAsked() {
+        return asked;
+    }
+
+    public int getCorrect() {
+        return correct;
+    }
+
+    public Boolean getPassed() {
+        return passed;
+    }
+
+    public java.time.OffsetDateTime getFinishedAt() {
+        return finishedAt;
+    }
 }

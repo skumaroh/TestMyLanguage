@@ -61,4 +61,24 @@ public class AssessAnswer {
     public void setDurationMs(Integer durationMs) {
         this.durationMs = durationMs;
     }
+
+    public Long getBlockResultId() {
+        return blockResultId;
+    }
+
+    public int getPosition() {
+        return position;
+    }
+
+    public String getItemRef() {
+        return itemRef;
+    }
+
+    public String getAnswerGiven() {
+        return answerGiven;
+    }
+
+    public boolean isCorrect() {
+        return correct;
+    }
 }
