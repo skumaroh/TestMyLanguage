@@ -118,12 +118,12 @@ class ConversationTurnGraderTest {
 
     @Test
     void aJsonProfileInTheDescriptionIsUsedAndPlainTextOtherwise() {
-        Conversation c = conversation();
+        Conversation c = new Conversation("tamil", 1, "META", "Visiting a tailor", "ரவி");
         c.setPersonaDescription("{\"role\":\"tailor\",\"age\":50}");
         assertTrue(PersonaProfiles.describe(c).contains("\"role\":\"tailor\""));
         c.setPersonaDescription("{broken");
         assertTrue(PersonaProfiles.describe(c).contains("About you: {broken"));
-        assertEquals(null, PersonaProfiles.builtIn("Buying vegetables"));
+        assertEquals(null, PersonaProfiles.builtIn("Visiting a tailor"));
     }
 
     @Test
