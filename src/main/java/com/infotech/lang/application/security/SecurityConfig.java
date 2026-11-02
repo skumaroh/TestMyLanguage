@@ -71,7 +71,7 @@ public class SecurityConfig extends VaadinWebSecurity {
     // Allow /api/media/** to pass through Vaadin's filter chain so Spring MVC can handle it.
     // The controller itself enforces authentication via @AuthenticationPrincipal.
     http.authorizeHttpRequests(auth -> auth
-        .requestMatchers("/api/media/**").authenticated()
+        .requestMatchers("/api/media/**", "/api/tts/**").authenticated()
         // Kubernetes liveness and readiness probes
         .requestMatchers("/actuator/health/**").permitAll());
     
