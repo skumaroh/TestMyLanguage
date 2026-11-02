@@ -30,6 +30,7 @@ import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.orderedlayout.FlexComponent.Alignment;
 import com.vaadin.flow.component.orderedlayout.FlexLayout;
+import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.router.PageTitle;
@@ -158,7 +159,8 @@ public class TranslationBlockView extends VerticalLayout {
                         : "Use \"aa\", \"ee\", \"oo\" for long vowels and \"ae\" for ஏ. ")
                 + "You can also use your own " + name + " keyboard.");
         hint.getStyle().set("color", "var(--lumo-secondary-text-color)").set("font-size", "var(--lumo-font-size-s)");
-        checkButton = new Button("Check", e -> submit());
+        checkButton = new Button("Submit", e -> submit());
+        Button clearButton = new Button("Clear", e -> clearTyping());
         suggestionRow = new Div();
         suggestionRow.getStyle().set("min-height", "2.5em");
         suggestionsUsed = 0;
@@ -174,9 +176,22 @@ public class TranslationBlockView extends VerticalLayout {
             }
         });
         VoiceInput voice = new VoiceInput(speech, language, this::takeSpokenText);
-        add(answerBox, voice, suggestionRow, hint, checkButton);
+        // Submit and Clear sit right under the text box; the microphone, the spelling suggestions and the tip come after
+        add(answerBox, new HorizontalLayout(checkButton, clearButton), voice, suggestionRow, hint);
         String tag = "hindi".equalsIgnoreCase(language) ? "hindi" : "tamil";
         answerBox.getElement().executeJs("window.tmlTransliterate && window.tmlTransliterate.attach(this, $0)", tag);
+    }
+
+    /** Start over: empties the box and forgets the suggestions, the spoken words and the spelling help used so far. */
+    private void clearTyping() {
+        answerBox.clear();
+        suggestionRow.removeAll();
+        lastSuggestedFor = "";
+        suggestionsUsed = 0;
+        voiceUsed = false;
+        voiceText = "";
+        answerBox.getElement().executeJs("this.__tmlSync && this.__tmlSync()");
+        answerBox.focus();
     }
 
     /**
@@ -318,13 +333,21 @@ public class TranslationBlockView extends VerticalLayout {
             tileRow.add(tile);
         }
         Button undo = new Button("Undo", e -> undoTile());
-        checkButton = new Button("Check", e -> submit());
-        add(tappedRow, tileRow, new Div(undo, checkButton));
+        Button clearTiles = new Button("Clear", e -> clearTiles());
+        checkButton = new Button("Submit", e -> submit());
+        add(tappedRow, tileRow, new HorizontalLayout(checkButton, undo, clearTiles));
         refreshTapped();
     }
 
     private void refreshTapped() {
         tappedRow.setText(String.join(" ", tapped));
+    }
+
+    /** Start over: puts every tapped word back. */
+    private void clearTiles() {
+        tapped.clear();
+        tileRow.getChildren().filter(c -> c instanceof Button).forEach(c -> ((Button) c).setEnabled(true));
+        refreshTapped();
     }
 
     private void undoTile() {

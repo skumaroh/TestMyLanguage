@@ -137,8 +137,9 @@ public class VideoBlockView extends VerticalLayout implements BeforeEnterObserve
         }
         answerBox = new SmartAnswerBox(language, speller, speech);
         answerBox.setWidthFull();
-        send = new Button("Send", e -> submit());
-        add(answerBox, send);
+        send = new Button("Submit", e -> submit());
+        answerBox.addSubmit(send);
+        add(answerBox);
     }
 
     private void submit() {
