@@ -4,6 +4,7 @@ import com.infotech.lang.application.config.LanguageContext;
 import com.infotech.lang.application.conversation.Conversation;
 import com.infotech.lang.application.conversation.ConversationLibrary;
 import com.infotech.lang.application.conversation.ConversationObjective;
+import com.infotech.lang.application.conversation.PersonaLineReview;
 import com.infotech.lang.application.data.entity.User;
 import com.infotech.lang.application.data.repository.UserRepository;
 import com.infotech.lang.application.security.SecurityService;
@@ -40,6 +41,7 @@ public class ConversationAdminView extends VerticalLayout {
     private static final int LEVEL = 1;
 
     private final ConversationLibrary library;
+    private final PersonaLineReview lineReview;
     private final SecurityService securityService;
     private final UserRepository userRepository;
     private final String language;
@@ -50,9 +52,10 @@ public class ConversationAdminView extends VerticalLayout {
     private final Button edit = new Button("Edit");
     private final Button retire = new Button("Retire");
 
-    public ConversationAdminView(ConversationLibrary library, SecurityService securityService, UserRepository userRepository,
+    public ConversationAdminView(ConversationLibrary library, PersonaLineReview lineReview, SecurityService securityService, UserRepository userRepository,
                                  LanguageContext languageContext) {
         this.library = library;
+        this.lineReview = lineReview;
         this.securityService = securityService;
         this.userRepository = userRepository;
         this.language = languageContext.getLanguage();
@@ -124,8 +127,27 @@ public class ConversationAdminView extends VerticalLayout {
             sb.append(o.getPosition()).append(". ").append(o.getObjectiveEn()).append("\n   hint: ")
                     .append(nullToEmpty(o.getVocabularyHint())).append("\n   persona asks: ").append(o.getFallbackLine()).append("\n");
         }
+        sb.append(liveLinesText(c.getId()));
         sb.append("\nCLOSING: ").append(c.getClosingLine()).append("\n   (").append(nullToEmpty(c.getClosingEnglish())).append(")");
         preview.setValue(sb.toString());
+    }
+
+    /** The live lines Meta wrote in real attempts, so a good one can be copied into the stored objective. */
+    private String liveLinesText(Long id) {
+        try {
+            List<PersonaLineReview.LiveLine> lines = lineReview.liveLines(id);
+            if (lines.isEmpty()) {
+                return "\nLIVE LINES FROM META: none yet (they appear after learners or admins try this conversation).\n";
+            }
+            StringBuilder sb = new StringBuilder("\nLIVE LINES FROM META (what the persona actually said in attempts; copy a good one into \"persona asks\" above):\n");
+            for (PersonaLineReview.LiveLine l : lines) {
+                sb.append("  after goal ").append(l.position()).append(" (x").append(l.times()).append("): ").append(l.next())
+                        .append("\n      answering: ").append(l.asked()).append("\n");
+            }
+            return sb.toString();
+        } catch (RuntimeException e) {
+            return "\nLIVE LINES FROM META: could not be read.\n";
+        }
     }
 
     private static String nullToEmpty(String s) {

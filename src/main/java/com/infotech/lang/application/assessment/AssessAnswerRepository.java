@@ -25,4 +25,7 @@ public interface AssessAnswerRepository extends JpaRepository<AssessAnswer, Long
             + "(select b.id from AssessBlockResult b where b.attemptId in "
             + "(select t.id from AssessAttempt t where t.userId = :userId))")
     List<String> findClipRefsByUser(@Param("userId") java.util.UUID userId);
+
+    /** The newest answers recorded for the items starting with a prefix (for example {@code conv:12:}). */
+    List<AssessAnswer> findTop300ByItemRefStartingWithOrderByIdDesc(String prefix);
 }
