@@ -51,6 +51,22 @@ async function blobToWav(blob) {
   }
 }
 
+// While the microphone is open, nothing else may play: a clip with sound (or a spoken prompt) would be picked up by the
+// microphone and spoil the recording. Playing media is paused and muted, then put back when recording ends.
+function quietPage() {
+  const held = [];
+  document.querySelectorAll('video, audio').forEach((m) => {
+    held.push({ m, wasPlaying: !m.paused, wasMuted: m.muted });
+    m.muted = true;
+    m.pause();
+  });
+  try { if (window.speechSynthesis) window.speechSynthesis.cancel(); } catch (e) { /* ignore */ }
+  return () => held.forEach(({ m, wasPlaying, wasMuted }) => {
+    m.muted = wasMuted;
+    if (wasPlaying && m.isConnected) m.play().catch(() => {});
+  });
+}
+
 function attach(host, button, status, idleLabel) {
   if (host.__voiceAttached) return;
   host.__voiceAttached = true;
@@ -62,6 +78,7 @@ function attach(host, button, status, idleLabel) {
   let recorder = null;
   let stream = null;
   let timer = null;
+  let restorePage = null;
   let startedAt = 0;
   const setIdle = (message) => {
     button.disabled = false;
@@ -85,6 +102,7 @@ function attach(host, button, status, idleLabel) {
     recorder.ondataavailable = (e) => { if (e.data && e.data.size) chunks.push(e.data); };
     recorder.onstop = async () => {
       clearTimeout(timer);
+      if (restorePage) { restorePage(); restorePage = null; }
       stream.getTracks().forEach((t) => t.stop());
       if (Date.now() - startedAt < 600) { setIdle('That was too short. Tap the button, say the sentence, tap again.'); return; }
       button.disabled = true;
@@ -97,6 +115,7 @@ function attach(host, button, status, idleLabel) {
         setIdle('The recording could not be used. Please try again, or type your answer.');
       }
     };
+    restorePage = quietPage();
     startedAt = Date.now();
     recorder.start();
     button.textContent = '⏹ Stop';
