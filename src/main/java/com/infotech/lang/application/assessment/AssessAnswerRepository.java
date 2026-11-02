@@ -17,4 +17,6 @@ public interface AssessAnswerRepository extends JpaRepository<AssessAnswer, Long
             + "(select b.id from AssessBlockResult b where b.attemptId in "
             + "(select t.id from AssessAttempt t where t.userId = :userId))")
     List<String> findConversationRefsByUser(@Param("userId") java.util.UUID userId);
+
+    List<AssessAnswer> findByBlockResultIdOrderByPosition(Long blockResultId);
 }

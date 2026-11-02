@@ -42,6 +42,58 @@ public class AssessAttempt {
     @Column(name = "total_correct", nullable = false)
     private int totalCorrect;
 
+    @Column(name = "percent", precision = 5, scale = 2)
+    private java.math.BigDecimal percent;
+
+    @Column(name = "level_passed")
+    private Boolean levelPassed;
+
+    public UUID getUserId() {
+        return userId;
+    }
+
+    public String getLanguage() {
+        return language;
+    }
+
+    public int getLevel() {
+        return level;
+    }
+
+    public OffsetDateTime getStartedAt() {
+        return startedAt;
+    }
+
+    public OffsetDateTime getCompletedAt() {
+        return completedAt;
+    }
+
+    public int getTotalAsked() {
+        return totalAsked;
+    }
+
+    public int getTotalCorrect() {
+        return totalCorrect;
+    }
+
+    public java.math.BigDecimal getPercent() {
+        return percent;
+    }
+
+    public Boolean getLevelPassed() {
+        return levelPassed;
+    }
+
+    /** Fixes the totals and the level result when the attempt is completed. */
+    public void complete(int totalAsked, int totalCorrect, java.math.BigDecimal percent, Boolean levelPassed) {
+        this.totalAsked = totalAsked;
+        this.totalCorrect = totalCorrect;
+        this.percent = percent;
+        this.levelPassed = levelPassed;
+        this.status = "COMPLETED";
+        this.completedAt = OffsetDateTime.now();
+    }
+
     public Long getId() {
         return id;
     }

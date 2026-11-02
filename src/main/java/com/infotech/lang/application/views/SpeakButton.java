@@ -23,8 +23,10 @@ public class SpeakButton extends Button {
         super("▶ Listen");
         addThemeVariants(ButtonVariant.LUMO_TERTIARY, ButtonVariant.LUMO_SMALL);
         getElement().setAttribute("aria-label", "Listen to this line");
-        String tag = "hindi".equalsIgnoreCase(language) ? "hi-IN" : "ta-IN";
-        String url = registry != null && registry.isEnabled() ? "/api/tts/" + registry.register(language, text) : "";
+        boolean english = "english".equalsIgnoreCase(language);
+        String tag = english ? "en-US" : "hindi".equalsIgnoreCase(language) ? "hi-IN" : "ta-IN";
+        // the MMS voices are Tamil and Hindi only; English lines use the browser's voice
+        String url = !english && registry != null && registry.isEnabled() ? "/api/tts/" + registry.register(language, text) : "";
         addAttachListener(e -> getElement().executeJs("window.tmlSpeak && window.tmlSpeak.attach(this, $0, $1, $2)", text, tag, url));
     }
 }

@@ -24,6 +24,7 @@ public class MainLayout extends AppLayout {
         menu.setPadding(true);
         menu.add(new RouterLink("Home", HomeView.class));
         menu.add(new RouterLink("Start the assessment", WelcomeView.class));
+        menu.add(new RouterLink("My results", HistoryView.class));
         if (isAdmin()) {
             menu.add(new RouterLink("Test Blocks", AdminBlocksView.class));
             menu.add(new RouterLink("Admin: conversations", ConversationAdminView.class));
