@@ -13,6 +13,7 @@ import com.infotech.lang.application.data.entity.User;
 import com.infotech.lang.application.data.repository.UserRepository;
 import com.infotech.lang.application.security.SecurityService;
 import com.infotech.lang.application.translation.SpellingSuggester;
+import com.infotech.lang.application.voice.SpeechRegistry;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.html.Div;
@@ -64,6 +65,7 @@ public class ConversationBlockView extends VerticalLayout implements BeforeEnter
     private final SecurityService securityService;
     private final UserRepository userRepository;
     private final ConversationPicker conversationPicker;
+    private final SpeechRegistry speechRegistry;
 
     private ConversationPicker.Picked picked;
     private AssessBlockResult block;
@@ -88,6 +90,7 @@ public class ConversationBlockView extends VerticalLayout implements BeforeEnter
                                  ConversationTurnGrader grader,
                                  SpellingSuggester speller,
                                  SpeechToText speech,
+                                 SpeechRegistry speechRegistry,
                                  LanguageContext languageContext) {
         this.assessment = assessment;
         this.grader = grader;
@@ -96,6 +99,7 @@ public class ConversationBlockView extends VerticalLayout implements BeforeEnter
         this.securityService = securityService;
         this.userRepository = userRepository;
         this.conversationPicker = picker;
+        this.speechRegistry = speechRegistry;
         this.language = languageContext.getLanguage();
         setAlignItems(Alignment.CENTER);
         setMaxWidth("760px");
@@ -198,7 +202,7 @@ public class ConversationBlockView extends VerticalLayout implements BeforeEnter
     private Div bubble(String text, String spoken, boolean persona) {
         Div d = new Div();
         Span words = new Span(text);
-        d.add(words, new SpeakButton(spoken, language));
+        d.add(words, new SpeakButton(spoken, language, speechRegistry));
         d.getStyle().set("padding", "var(--lumo-space-s) var(--lumo-space-m)").set("margin", "var(--lumo-space-xs) 0")
                 .set("border-radius", "var(--lumo-border-radius-l)").set("max-width", "85%").set("font-size", "1.2em")
                 .set("background", persona ? "var(--lumo-contrast-10pct)" : "var(--lumo-primary-color-10pct)")
