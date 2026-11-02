@@ -18,6 +18,7 @@ import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.html.Paragraph;
+import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.orderedlayout.FlexComponent.Alignment;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
@@ -180,7 +181,7 @@ public class ConversationBlockView extends VerticalLayout implements BeforeEnter
         askedEnglish = nz(english);
         hintUsed = false;
         shownAtMillis = System.currentTimeMillis();
-        Div bubble = bubble(picked.conversation().getPersonaName() + ": " + line, true);
+        Div bubble = bubble(picked.conversation().getPersonaName() + ": " + line, line, true);
         transcript.add(bubble);
         glossLine = new Paragraph();
         glossLine.getStyle().set("font-size", "var(--lumo-font-size-s)").set("margin", "0 0 var(--lumo-space-s) 0");
@@ -193,9 +194,11 @@ public class ConversationBlockView extends VerticalLayout implements BeforeEnter
         transcript.add(new Div(gloss, glossLine));
     }
 
-    private static Div bubble(String text, boolean persona) {
+    /** One line of the conversation with a Listen button; {@code spoken} is what is read aloud (without the persona's name). */
+    private Div bubble(String text, String spoken, boolean persona) {
         Div d = new Div();
-        d.setText(text);
+        Span words = new Span(text);
+        d.add(words, new SpeakButton(spoken, language));
         d.getStyle().set("padding", "var(--lumo-space-s) var(--lumo-space-m)").set("margin", "var(--lumo-space-xs) 0")
                 .set("border-radius", "var(--lumo-border-radius-l)").set("max-width", "85%").set("font-size", "1.2em")
                 .set("background", persona ? "var(--lumo-contrast-10pct)" : "var(--lumo-primary-color-10pct)")
@@ -237,7 +240,7 @@ public class ConversationBlockView extends VerticalLayout implements BeforeEnter
                     + (turn.hasSpellingNote() ? " – spelling: " + turn.spelling() + " → " + turn.corrected() : ""));
             engine.record(turn.met());
             history.add(new ConversationTurnGrader.Line(false, given));
-            transcript.add(bubble(given, false));
+            transcript.add(bubble(given, given, false));
             if (engine.isComplete()) {
                 finishBlock();
             } else {
@@ -284,7 +287,7 @@ public class ConversationBlockView extends VerticalLayout implements BeforeEnter
         assessment.finishBlock(block.getId(), engine.asked(), engine.correct(), engine.passed());
         remove(controls);
         Conversation c = picked.conversation();
-        transcript.add(bubble(c.getPersonaName() + ": " + c.getClosingLine(), true));
+        transcript.add(bubble(c.getPersonaName() + ": " + c.getClosingLine(), c.getClosingLine(), true));
         add(new H2("Conversation finished"));
         add(new Paragraph("Thank you. Your answers are saved. Your results will be shown at the end of the assessment."));
         add(new Paragraph("The next part is not ready yet."));
