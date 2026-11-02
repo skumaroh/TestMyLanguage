@@ -106,6 +106,14 @@ public class ConversationLibrary {
     }
 
     @Transactional
+    public void markUsed(Long id) {
+        conversations.findById(id).ifPresent(c -> {
+            c.markUsed();
+            conversations.save(c);
+        });
+    }
+
+    @Transactional
     public void retire(Long id) {
         Conversation c = conversations.findById(id).orElseThrow(() -> new IllegalArgumentException("Conversation not found."));
         c.setStatus(Conversation.RETIRED);

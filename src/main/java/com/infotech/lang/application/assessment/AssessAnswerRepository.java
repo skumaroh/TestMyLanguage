@@ -11,4 +11,10 @@ public interface AssessAnswerRepository extends JpaRepository<AssessAnswer, Long
     @Query("select a.itemRef from AssessAnswer a where a.blockResultId in "
             + "(select b.id from AssessBlockResult b where b.attemptId = :attemptId)")
     List<String> findItemRefsByAttempt(@Param("attemptId") Long attemptId);
+
+    /** The conversation items ({@code conv:<id>:<position>}) this student has already been asked, in any attempt. */
+    @Query("select a.itemRef from AssessAnswer a where a.itemRef like 'conv:%' and a.blockResultId in "
+            + "(select b.id from AssessBlockResult b where b.attemptId in "
+            + "(select t.id from AssessAttempt t where t.userId = :userId))")
+    List<String> findConversationRefsByUser(@Param("userId") java.util.UUID userId);
 }
