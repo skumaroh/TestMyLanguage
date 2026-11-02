@@ -118,12 +118,12 @@ class ConversationTurnGraderTest {
 
     @Test
     void aJsonProfileInTheDescriptionIsUsedAndPlainTextOtherwise() {
-        Conversation c = conversation();
+        Conversation c = new Conversation("tamil", 1, "META", "Visiting a tailor", "ரவி");
         c.setPersonaDescription("{\"role\":\"tailor\",\"age\":50}");
         assertTrue(PersonaProfiles.describe(c).contains("\"role\":\"tailor\""));
         c.setPersonaDescription("{broken");
         assertTrue(PersonaProfiles.describe(c).contains("About you: {broken"));
-        assertEquals(null, PersonaProfiles.builtIn("Buying vegetables"));
+        assertEquals(null, PersonaProfiles.builtIn("Visiting a tailor"));
     }
 
     @Test
@@ -131,5 +131,14 @@ class ConversationTurnGraderTest {
         ConversationTurnGrader.Turn t = grade(answering("{\"verdict\":\"MET\",\"reason\":\"ok\",\"spelling\":\"CORRECT\","
                 + "\"corrected\":\"\",\"covered\":[1,2,99],\"reply\":\"r\",\"reply_english\":\"e\"}"), objective(2, "Say what you want"), "x");
         assertEquals(List.of(1, 2), t.covered());
+    }
+
+    @Test
+    void theVegetableSellerGetsItsOwnProfile() {
+        String veg = PersonaProfiles.builtIn("Buying vegetables at the market");
+        assertTrue(veg.contains("tomato 40 rupees a kilo"));
+        assertFalse(veg.contains("milk"));
+        assertTrue(PersonaProfiles.builtIn("காய்கறி கடை").contains("vegetable seller"));
+        assertTrue(PersonaProfiles.builtIn("A friendly milk vendor").contains("milk vendor"));
     }
 }
