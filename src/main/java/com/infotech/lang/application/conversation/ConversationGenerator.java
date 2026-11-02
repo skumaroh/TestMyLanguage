@@ -96,7 +96,7 @@ public class ConversationGenerator {
     }
 
     /** True when most letters of the text are in the script of the language (so an English answer is rejected). */
-    static boolean inScript(String text, String language) {
+    public static boolean inScript(String text, String language) {
         if (text == null || text.isBlank()) {
             return false;
         }

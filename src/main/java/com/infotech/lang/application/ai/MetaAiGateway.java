@@ -101,15 +101,22 @@ public class MetaAiGateway implements AiGateway {
         messages.addObject().put("role", "system").put("content", request.systemPrompt());
         ObjectNode user = messages.addObject();
         user.put("role", "user");
-        if (request.imagePng() == null) {
+        if (request.imagePng() == null && request.videoMp4() == null) {
             user.put("content", request.userPrompt());
         } else {
             ArrayNode parts = user.putArray("content");
             parts.addObject().put("type", "text").put("text", request.userPrompt());
-            ObjectNode image = parts.addObject();
-            image.put("type", "image_url");
-            image.putObject("image_url").put("url",
-                    "data:image/png;base64," + Base64.getEncoder().encodeToString(request.imagePng()));
+            if (request.videoMp4() != null) {
+                ObjectNode video = parts.addObject();
+                video.put("type", "video_url");
+                video.putObject("video_url").put("url",
+                        "data:video/mp4;base64," + Base64.getEncoder().encodeToString(request.videoMp4()));
+            } else {
+                ObjectNode image = parts.addObject();
+                image.put("type", "image_url");
+                image.putObject("image_url").put("url",
+                        "data:image/png;base64," + Base64.getEncoder().encodeToString(request.imagePng()));
+            }
         }
         ObjectNode format = body.putObject("response_format");
         format.put("type", "json_schema");

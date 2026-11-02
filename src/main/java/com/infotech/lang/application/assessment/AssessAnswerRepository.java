@@ -19,4 +19,10 @@ public interface AssessAnswerRepository extends JpaRepository<AssessAnswer, Long
     List<String> findConversationRefsByUser(@Param("userId") java.util.UUID userId);
 
     List<AssessAnswer> findByBlockResultIdOrderByPosition(Long blockResultId);
+
+    /** The clip items ({@code clip:<id>}) this student has already been asked, in any attempt. */
+    @Query("select a.itemRef from AssessAnswer a where a.itemRef like 'clip:%' and a.blockResultId in "
+            + "(select b.id from AssessBlockResult b where b.attemptId in "
+            + "(select t.id from AssessAttempt t where t.userId = :userId))")
+    List<String> findClipRefsByUser(@Param("userId") java.util.UUID userId);
 }

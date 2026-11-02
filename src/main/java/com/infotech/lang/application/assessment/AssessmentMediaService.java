@@ -30,6 +30,9 @@ public class AssessmentMediaService {
     public static final String AUDIO_CONTAINER = "language-tool-audio";
     public static final String IMAGE_CONTAINER = "language-tool-images";
     public static final String REFERENCE_CONTAINER = "language-tool-letter-references";
+    /** The video clips and action pictures of the assessment live in the image container, under this folder (owner decision). */
+    public static final String VIDEO_CONTAINER = IMAGE_CONTAINER;
+    public static final String VIDEO_PREFIX = "assessment-clips/";
 
     private static final Logger logger = LoggerFactory.getLogger(AssessmentMediaService.class);
 
@@ -66,7 +69,40 @@ public class AssessmentMediaService {
     /** True for the two containers the proxy may serve for the given kind ({@code audio} or {@code image}). */
     public static boolean isAllowed(String kind, String container) {
         return ("audio".equals(kind) && AUDIO_CONTAINER.equals(container))
-                || ("image".equals(kind) && (IMAGE_CONTAINER.equals(container) || REFERENCE_CONTAINER.equals(container)));
+                || ("image".equals(kind) && (IMAGE_CONTAINER.equals(container) || REFERENCE_CONTAINER.equals(container)))
+                || ("video".equals(kind) && VIDEO_CONTAINER.equals(container));
+    }
+
+    /** A blob name with its size in bytes. */
+    public record BlobFile(String name, long sizeBytes) {
+    }
+
+    /**
+     * The files under {@link #VIDEO_PREFIX} in the clips container (name and size), or empty when the container cannot be read.
+     * Never throws.
+     */
+    public List<BlobFile> listClipFiles() {
+        if (imageConnectionString == null || imageConnectionString.isBlank()) {
+            return List.of();
+        }
+        try {
+            BlobServiceClient client = clients.computeIfAbsent(imageConnectionString,
+                    cs -> new BlobServiceClientBuilder().connectionString(cs).buildClient());
+            List<BlobFile> files = new ArrayList<>();
+            for (BlobItem item : client.getBlobContainerClient(VIDEO_CONTAINER)
+                    .listBlobs(new ListBlobsOptions().setPrefix(VIDEO_PREFIX), null)) {
+                long size = item.getProperties() == null || item.getProperties().getContentLength() == null ? 0
+                        : item.getProperties().getContentLength();
+                files.add(new BlobFile(item.getName(), size));
+            }
+            return files;
+        } catch (BlobStorageException e) {
+            logger.warn("Could not list the clips: status {}, error code {}", e.getStatusCode(), e.getErrorCode());
+            return List.of();
+        } catch (RuntimeException e) {
+            logger.warn("Could not list the clips: {}", e.getClass().getSimpleName());
+            return List.of();
+        }
     }
 
     /** The blob's bytes, or empty when it does not exist or cannot be read. Never throws. */

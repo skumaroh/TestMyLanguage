@@ -28,6 +28,7 @@ public class MainLayout extends AppLayout {
         if (isAdmin()) {
             menu.add(new RouterLink("Test Blocks", AdminBlocksView.class));
             menu.add(new RouterLink("Admin: conversations", ConversationAdminView.class));
+            menu.add(new RouterLink("Admin: clips", ClipAdminView.class));
             menu.add(new RouterLink("Admin: proctor texts", ProctorReviewView.class));
             menu.add(new RouterLink("Admin: handwriting check", HandwritingCheckView.class));
             menu.add(new RouterLink("Admin: translation check", TranslationCheckView.class));
