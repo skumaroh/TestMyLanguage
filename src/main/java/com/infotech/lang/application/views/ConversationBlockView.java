@@ -22,11 +22,14 @@ import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.orderedlayout.FlexComponent.Alignment;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
+import com.vaadin.flow.router.BeforeEnterEvent;
+import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import jakarta.annotation.security.PermitAll;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -43,7 +46,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 @Route(value = "assessment/conversation", layout = MainLayout.class)
 @PageTitle("Conversation | TestMyLanguage")
 @PermitAll
-public class ConversationBlockView extends VerticalLayout {
+public class ConversationBlockView extends VerticalLayout implements BeforeEnterObserver {
 
     private static final Logger logger = LoggerFactory.getLogger(ConversationBlockView.class);
     private static final String BLOCK_CODE = "CONVERSATION";
@@ -57,6 +60,9 @@ public class ConversationBlockView extends VerticalLayout {
     private final BlockEngine engine = new BlockEngine();
     private final SpellingSuggester speller;
     private final SpeechToText speech;
+    private final SecurityService securityService;
+    private final UserRepository userRepository;
+    private final ConversationPicker conversationPicker;
 
     private ConversationPicker.Picked picked;
     private AssessBlockResult block;
@@ -86,17 +92,39 @@ public class ConversationBlockView extends VerticalLayout {
         this.grader = grader;
         this.speller = speller;
         this.speech = speech;
+        this.securityService = securityService;
+        this.userRepository = userRepository;
+        this.conversationPicker = picker;
         this.language = languageContext.getLanguage();
         setAlignItems(Alignment.CENTER);
         setMaxWidth("760px");
         getStyle().set("margin", "0 auto");
+    }
+
+    /**
+     * Starts the block once the address is known. An admin may add {@code ?conversation=random} (any verified conversation) or
+     * {@code ?conversation=<id>} (that conversation, a draft included) to try the block; for everyone else the parameter is ignored
+     * and the usual rule applies: a conversation this learner has not had.
+     */
+    @Override
+    public void beforeEnter(BeforeEnterEvent event) {
+        if (block != null) {
+            return;
+        }
         try {
             UUID userId = userIdOf(securityService, userRepository);
             if (userId == null) {
                 showMessage("Please sign in again to start.");
                 return;
             }
-            var found = picker.pick(userId, language, LEVEL);
+            var params = event.getLocation().getQueryParameters().getParameters().get("conversation");
+            Optional<ConversationPicker.Picked> found;
+            if (MainLayout.isAdmin() && params != null && !params.isEmpty()) {
+                Long id = parseId(params.get(0));
+                found = conversationPicker.pickForAdmin(language, LEVEL, id);
+            } else {
+                found = conversationPicker.pick(userId, language, LEVEL);
+            }
             if (found.isEmpty()) {
                 showMessage("There is no conversation ready for this part yet.");
                 return;
@@ -108,6 +136,14 @@ public class ConversationBlockView extends VerticalLayout {
         } catch (RuntimeException e) {
             logger.error("Could not start the conversation block", e);
             showMessage("Sorry, we could not start this part. Please try again in a moment.");
+        }
+    }
+
+    private static Long parseId(String text) {
+        try {
+            return Long.valueOf(text.trim());
+        } catch (NumberFormatException e) {
+            return null; // "random" or anything else: any verified conversation
         }
     }
 

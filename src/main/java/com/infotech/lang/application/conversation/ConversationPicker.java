@@ -49,6 +49,33 @@ public class ConversationPicker {
         return chooseLeastRecentlyUsed(verified).flatMap(c -> complete(c, REUSED));
     }
 
+    public static final String ADMIN_TEST = "ADMIN_TEST";
+
+    /**
+     * For an admin trying the block: the conversation with the given id (a draft may be previewed; a retired one may not), or
+     * any verified conversation at random when {@code conversationId} is null. History is ignored and the use count is not
+     * changed, so testing does not use up the library.
+     */
+    public Optional<Picked> pickForAdmin(String language, int level, Long conversationId) {
+        Conversation chosen;
+        if (conversationId != null) {
+            chosen = conversations.findById(conversationId)
+                    .filter(c -> language.equalsIgnoreCase(c.getLanguage()) && !Conversation.RETIRED.equals(c.getStatus()))
+                    .orElse(null);
+        } else {
+            List<Conversation> verified = new ArrayList<>(
+                    conversations.findByLanguageAndLevelAndStatus(language, level, Conversation.VERIFIED));
+            Collections.shuffle(verified);
+            chosen = verified.isEmpty() ? null : verified.get(0);
+        }
+        if (chosen == null) {
+            return Optional.empty();
+        }
+        List<ConversationObjective> objectives = library.objectivesOf(chosen.getId());
+        return objectives.size() == ConversationGenerator.OBJECTIVES
+                ? Optional.of(new Picked(chosen, objectives, ADMIN_TEST)) : Optional.empty();
+    }
+
     private Optional<Picked> complete(Conversation c, String flag) {
         List<ConversationObjective> objectives = library.objectivesOf(c.getId());
         if (objectives.size() != ConversationGenerator.OBJECTIVES) {
