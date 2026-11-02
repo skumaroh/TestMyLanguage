@@ -13,6 +13,7 @@ import com.vaadin.flow.component.dependency.JsModule;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Paragraph;
 import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.data.value.ValueChangeMode;
@@ -38,6 +39,7 @@ public class SmartAnswerBox extends VerticalLayout {
     private final transient ObjectMapper json = new ObjectMapper();
     private final TextArea box = new TextArea();
     private final Div suggestionRow = new Div();
+    private final HorizontalLayout actions = new HorizontalLayout();
 
     private String lastSuggestedFor = "";
     private int suggestionsUsed;
@@ -68,9 +70,20 @@ public class SmartAnswerBox extends VerticalLayout {
                 + ") and they turn into " + name + " letters. When you pause, Meta may suggest a better spelling; tap it to use it. "
                 + "You can also use your own " + name + " keyboard or speak.");
         hint.getStyle().set("color", "var(--lumo-secondary-text-color)").set("font-size", "var(--lumo-font-size-s)");
-        add(box, new VoiceInput(speech, language, this::takeSpokenText), suggestionRow, hint);
+        Button clearButton = new Button("Clear", e -> {
+            clear();
+            box.focus();
+        });
+        actions.add(clearButton);
+        // the Submit button (added by the page) and Clear sit right under the text box
+        add(box, actions, new VoiceInput(speech, language, this::takeSpokenText), suggestionRow, hint);
         addAttachListener(e -> box.getElement().executeJs("window.tmlTransliterate && window.tmlTransliterate.attach(this, $0)",
                 "hindi".equalsIgnoreCase(language) ? "hindi" : "tamil"));
+    }
+
+    /** Puts the page's Submit button first in the row of buttons under the text box, next to Clear. */
+    public void addSubmit(Button submit) {
+        actions.addComponentAsFirst(submit);
     }
 
     public String text() {

@@ -24,7 +24,6 @@ import com.vaadin.flow.component.html.Paragraph;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.orderedlayout.FlexComponent.Alignment;
-import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
@@ -179,7 +178,8 @@ public class ConversationBlockView extends VerticalLayout implements BeforeEnter
         Button done = new Button("I'm done", e -> endEarly("DONE"));
         done.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
         guard = new IdleGuard(() -> endEarly("TIMEOUT"), QUIET_SECONDS, WARN_SECONDS);
-        controls = new Div(answerBox, guard, new HorizontalLayout(send, done));
+        answerBox.addSubmit(send);
+        controls = new Div(answerBox, guard, done);
         controls.setWidthFull();
         add(controls);
 
