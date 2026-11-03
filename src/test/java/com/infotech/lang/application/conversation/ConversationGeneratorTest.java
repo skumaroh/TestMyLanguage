@@ -2,6 +2,7 @@ package com.infotech.lang.application.conversation;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.infotech.lang.application.ai.AiResult;
@@ -105,5 +106,46 @@ class ConversationGeneratorTest {
         String task = ConversationGenerator.task("tamil", 1, "a grandfather at home", java.util.List.of());
         assertTrue(task.contains("always MALE") && task.contains("masculine"));
         assertFalse(ConversationGenerator.SITUATIONS.stream().anyMatch(s -> s.contains("grandmother")));
+    }
+
+    @Test
+    void theNextPersonIsOneNobodyHasUsedYet() {
+        // every situation but the barber is already in an existing title: the barber is the only fresh choice
+        List<String> titles = new java.util.ArrayList<>();
+        for (java.util.Map.Entry<String, List<String>> e : ConversationGenerator.SITUATION_KEYS.entrySet()) {
+            if (!e.getKey().contains("barber")) {
+                titles.add("Scene about " + e.getValue().get(0) + " today");
+            }
+        }
+        for (int i = 0; i < 20; i++) {
+            assertEquals("a barber giving a haircut", ConversationGenerator.pickSituation(titles, List.of()));
+        }
+        // with nothing used any situation may come, but one that was already tried in this request is skipped
+        String first = ConversationGenerator.pickSituation(List.of(), List.of());
+        for (int i = 0; i < 20; i++) {
+            assertNotEquals(first, ConversationGenerator.pickSituation(List.of(), List.of(first)));
+        }
+        // when everything is used the list repeats instead of failing
+        List<String> all = new java.util.ArrayList<>();
+        ConversationGenerator.SITUATION_KEYS.values().forEach(k -> all.add(k.get(0) + " scene"));
+        assertTrue(ConversationGenerator.SITUATIONS.contains(ConversationGenerator.pickSituation(all, List.of())));
+    }
+
+    @Test
+    void aRepeatedScenarioTitleIsRetriedAndThenGivenUp() {
+        java.util.concurrent.atomic.AtomicInteger calls = new java.util.concurrent.atomic.AtomicInteger();
+        ConversationGenerator g = new ConversationGenerator(r -> {
+            calls.incrementAndGet();
+            return AiResult.success(json(8, "உங்களுக்கு என்ன வேண்டும்?", "வணக்கம்!"), 200, 10, 1, 1);
+        });
+        // the model keeps answering "Buying vegetables", which already exists: three tries, then nothing
+        assertTrue(g.generate("tamil", 1, List.of("buying  vegetables!")).isEmpty());
+        assertEquals(ConversationGenerator.MAX_ATTEMPTS, calls.get());
+        // a new title is accepted at once
+        calls.set(0);
+        assertTrue(g.generate("tamil", 1, List.of("Milk delivery")).isPresent());
+        assertEquals(1, calls.get());
+        assertTrue(ConversationGenerator.isDuplicate("Buying Vegetables", List.of("buying vegetables")));
+        assertFalse(ConversationGenerator.isDuplicate("Buying fruit", List.of("buying vegetables")));
     }
 }
