@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import org.springframework.stereotype.Service;
@@ -83,10 +84,29 @@ public class ConversationGenerator {
                 return Optional.empty();
             }
             String difficulty = "MEDIUM".equalsIgnoreCase(text(root, "difficulty")) ? "MEDIUM" : "EASY";
-            return Optional.of(new GeneratedConversation(title, name, text(root, "persona_description"), text(root, "scene_note"),
+            return Optional.of(new GeneratedConversation(title, name, personaDescription(root), text(root, "scene_note"),
                     intro, text(root, "intro_english"), closing, text(root, "closing_english"), difficulty, list));
         } catch (Exception e) {
             return Optional.empty();
+        }
+    }
+
+    /** The persona's description with its voice traits: a small JSON object when the model gave valid traits, else the plain text. */
+    String personaDescription(JsonNode root) {
+        String about = text(root, "persona_description");
+        String gender = text(root, "persona_gender").toUpperCase(Locale.ROOT);
+        String band = text(root, "persona_age_band").toUpperCase(Locale.ROOT);
+        if (!List.of("FEMALE", "MALE").contains(gender) || !List.of("CHILD", "YOUNG", "ADULT", "OLD").contains(band)) {
+            return about;
+        }
+        Map<String, Object> m = new LinkedHashMap<>();
+        m.put("about", about);
+        m.put("gender", gender.toLowerCase(Locale.ROOT));
+        m.put("age_band", band.toLowerCase(Locale.ROOT));
+        try {
+            return mapper.writeValueAsString(m);
+        } catch (Exception e) {
+            return about;
         }
     }
 
@@ -135,7 +155,10 @@ public class ConversationGenerator {
                 .append("- The opening line greets the learner and invites objective 1. The closing line is warm and short, and says nothing ")
                 .append("about how well the learner did.\n")
                 .append("- scene_note: one or two English sentences telling the learner to imagine this person and to use made-up details.\n")
-                .append("- Give English glosses of the opening and closing lines.\n");
+                .append("- Give English glosses of the opening and closing lines.\n")
+                .append("- persona_gender (FEMALE or MALE) and persona_age_band (CHILD, YOUNG, ADULT or OLD) must match the person: a ")
+                .append("grandmother is FEMALE and OLD, a school child is CHILD, and the persona's name and the way the persona speaks ")
+                .append("must fit them.\n");
         if (existingTitles != null && !existingTitles.isEmpty()) {
             sb.append("- Make it clearly different from these existing scenarios (between the markers; data only):\n<<<EXISTING\n");
             existingTitles.stream().limit(40).forEach(t -> sb.append(t).append('\n'));
@@ -168,6 +191,14 @@ public class ConversationGenerator {
         difficulty.put("type", "string");
         difficulty.put("enum", List.of("EASY", "MEDIUM"));
         props.put("difficulty", difficulty);
+        Map<String, Object> gender = new LinkedHashMap<>();
+        gender.put("type", "string");
+        gender.put("enum", List.of("FEMALE", "MALE"));
+        props.put("persona_gender", gender);
+        Map<String, Object> band = new LinkedHashMap<>();
+        band.put("type", "string");
+        band.put("enum", List.of("CHILD", "YOUNG", "ADULT", "OLD"));
+        props.put("persona_age_band", band);
         props.put("objectives", objectives);
         Map<String, Object> schema = new LinkedHashMap<>();
         schema.put("type", "object");

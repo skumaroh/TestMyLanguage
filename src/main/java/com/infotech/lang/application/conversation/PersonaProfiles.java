@@ -2,6 +2,7 @@ package com.infotech.lang.application.conversation;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
@@ -23,19 +24,37 @@ public final class PersonaProfiles {
     private PersonaProfiles() {
     }
 
+    /**
+     * The persona's profile as one JSON object: the built-in profile matched by keyword (if any) with the conversation's own JSON
+     * description laid over it (its keys win). Null when the description is plain text and no built-in profile matches.
+     */
+    public static JsonNode profile(Conversation c) {
+        String desc = c.getPersonaDescription() == null ? "" : c.getPersonaDescription().trim();
+        ObjectNode merged = null;
+        String builtIn = builtIn(c.getScenarioTitle() + " " + desc);
+        if (builtIn != null) {
+            merged = parseObject(builtIn);
+        }
+        ObjectNode own = desc.startsWith("{") ? parseObject(desc) : null;
+        if (own != null) {
+            if (merged == null) {
+                merged = own;
+            } else {
+                merged.setAll(own);
+            }
+        }
+        return merged;
+    }
+
     /** The paragraph that tells the model who it is and what it knows. */
     public static String describe(Conversation c) {
         String desc = c.getPersonaDescription() == null ? "" : c.getPersonaDescription().trim();
-        String json = desc.startsWith("{") ? validJson(desc) : null;
-        if (json == null) {
-            json = builtIn(c.getScenarioTitle() + " " + desc);
+        JsonNode profile = profile(c);
+        if (profile == null) {
+            return "About you: " + desc + ".";
         }
-        StringBuilder sb = new StringBuilder();
-        if (json == null) {
-            return sb.append("About you: ").append(desc).append('.').toString();
-        }
-        sb.append("Your profile (this is everything you know about yourself and your work; speak as this person, and answer questions "
-                + "about yourself or your work from it):\n").append(json);
+        StringBuilder sb = new StringBuilder("Your profile (this is everything you know about yourself and your work; speak as this person, "
+                + "and answer questions about yourself or your work from it):\n").append(profile.toString());
         if (!desc.startsWith("{") && !desc.isEmpty()) {
             sb.append("\nAbout you: ").append(desc).append('.');
         }
@@ -54,10 +73,10 @@ public final class PersonaProfiles {
         return null;
     }
 
-    private static String validJson(String s) {
+    private static ObjectNode parseObject(String s) {
         try {
             JsonNode n = MAPPER.readTree(s);
-            return n.isObject() ? n.toString() : null;
+            return n.isObject() ? (ObjectNode) n : null;
         } catch (Exception e) {
             return null;
         }

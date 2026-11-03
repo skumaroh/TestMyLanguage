@@ -5,6 +5,7 @@ import com.infotech.lang.application.conversation.Conversation;
 import com.infotech.lang.application.conversation.ConversationLibrary;
 import com.infotech.lang.application.conversation.ConversationObjective;
 import com.infotech.lang.application.conversation.PersonaLineReview;
+import com.infotech.lang.application.conversation.PersonaVoice;
 import com.infotech.lang.application.data.entity.User;
 import com.infotech.lang.application.data.repository.UserRepository;
 import com.infotech.lang.application.security.SecurityService;
@@ -121,6 +122,7 @@ public class ConversationAdminView extends VerticalLayout {
         StringBuilder sb = new StringBuilder();
         sb.append(c.getScenarioTitle()).append("  [").append(c.getStatus()).append(", ").append(c.getDifficulty()).append("]\n");
         sb.append("Persona: ").append(c.getPersonaName()).append(" – ").append(nullToEmpty(c.getPersonaDescription())).append("\n");
+        sb.append("Voice: ").append(PersonaVoice.of(c).describe()).append(" (set \"gender\" and \"age_band\" in the persona box to change it)\n");
         sb.append("Note to the learner: ").append(nullToEmpty(c.getSceneNote())).append("\n\n");
         sb.append("OPENING: ").append(c.getIntroLine()).append("\n   (").append(nullToEmpty(c.getIntroEnglish())).append(")\n\n");
         for (ConversationObjective o : library.objectivesOf(c.getId())) {
