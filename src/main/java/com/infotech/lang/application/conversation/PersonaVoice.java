@@ -36,6 +36,14 @@ public record PersonaVoice(String gender, String ageBand) {
         return age < 13 ? CHILD : age < 30 ? YOUNG : age < 60 ? ADULT : OLD;
     }
 
+    /** The voice colouring for this persona (a starting preset, tuned in the admin voice lab); the base voice when nothing matches. */
+    public com.infotech.lang.application.ai.VoiceStyle style() {
+        return com.infotech.lang.application.ai.VoiceStyle.presets().stream()
+                .filter(p -> p.gender().equals(gender) && p.ageBand().equals(ageBand))
+                .map(com.infotech.lang.application.ai.VoiceStyle.Preset::style)
+                .findFirst().orElse(com.infotech.lang.application.ai.VoiceStyle.BASE);
+    }
+
     /** For the admin page, for example "female, old". */
     public String describe() {
         return (UNKNOWN.equals(gender) ? "gender not set" : gender.toLowerCase(Locale.ROOT)) + ", " + ageBand.toLowerCase(Locale.ROOT);

@@ -1,7 +1,7 @@
 """Speech service for the assessment apps: text in Tamil or Hindi in, a WAV out, using Meta's open-source MMS-TTS models
 (facebook/mms-tts-tam, facebook/mms-tts-hin, facebook/mms-tts-eng; CC-BY-NC 4.0, so non-commercial use only).
 
-POST /tts   {"language": "tamil" | "hindi" | "english", "text": "..."}  ->  audio/wav (16-bit mono PCM)
+POST /tts   {"language": "tamil" | "hindi" | "english", "text": "...", "pitch": semitones (optional), "rate": speed (optional)}  ->  audio/wav (16-bit mono PCM)
 GET  /healthz                                                 ->  200 once the models are loaded
 
 Only the languages named in TTS_LANGUAGES (default "tamil,hindi"; "english" may be added) are loaded, so each language's pod can keep to one model.
@@ -19,6 +19,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import numpy as np
 import torch
 import textnorm
+import voicefx
 from transformers import AutoTokenizer, VitsModel
 
 REPOS = {"tamil": "facebook/mms-tts-tam", "hindi": "facebook/mms-tts-hin", "english": "facebook/mms-tts-eng"}
@@ -50,12 +51,15 @@ def clean(language, text):
     return text[:MAX_CHARS] if SCRIPT[language].search(text) else ""
 
 
-def synthesize(language, text):
+def synthesize(language, text, pitch=0.0, rate=1.0):
     tokenizer, model = MODELS[language]
     inputs = tokenizer(text, return_tensors="pt")
     with LOCK, torch.no_grad():
         waveform = model(**inputs).waveform
-    samples = np.clip(waveform.squeeze().numpy(), -1.0, 1.0)
+    wave = waveform.squeeze().detach().float()
+    if abs(float(pitch)) >= 0.05 or abs(float(rate) - 1.0) >= 0.01:
+        wave = voicefx.apply(wave, pitch, rate)  # optional persona voice: pitch in semitones, speed (1 = unchanged)
+    samples = np.clip(wave.numpy(), -1.0, 1.0)
     pcm = (samples * 32767).astype("<i2").tobytes()
     out = io.BytesIO()
     with wave.open(out, "wb") as w:
@@ -99,7 +103,9 @@ class Handler(BaseHTTPRequestHandler):
             text = clean(language, str(request.get("text", "")))
             if not text:
                 return self._send(422, b"nothing to read")
-            self._send(200, synthesize(language, text), "audio/wav")
+            pitch = voicefx.clamp(request.get("pitch", 0.0), -voicefx.MAX_PITCH, voicefx.MAX_PITCH, 0.0)
+            rate = voicefx.clamp(request.get("rate", 1.0), voicefx.MIN_RATE, voicefx.MAX_RATE, 1.0)
+            self._send(200, synthesize(language, text, pitch, rate), "audio/wav")
         except (ValueError, KeyError):
             self._send(400)
         except Exception:  # never echo details

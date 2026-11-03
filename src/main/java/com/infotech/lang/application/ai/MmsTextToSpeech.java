@@ -48,6 +48,11 @@ public class MmsTextToSpeech implements TextToSpeech {
 
     @Override
     public Result synthesize(String language, String text) {
+        return synthesize(language, text, VoiceStyle.BASE);
+    }
+
+    @Override
+    public Result synthesize(String language, String text, VoiceStyle style) {
         String line = text == null ? "" : text.trim();
         if (!isConfigured() || line.isEmpty()) {
             return Result.failure(0, "not configured");
@@ -63,7 +68,14 @@ public class MmsTextToSpeech implements TextToSpeech {
         int status = 0;
         Result result;
         try {
-            String body = mapper.writeValueAsString(Map.of("language", language(language), "text", line));
+            Map<String, Object> payload = new java.util.LinkedHashMap<>();
+            payload.put("language", language(language));
+            payload.put("text", line);
+            if (style != null && !style.isBase()) {
+                payload.put("pitch", style.pitch());
+                payload.put("rate", style.rate());
+            }
+            String body = mapper.writeValueAsString(payload);
             HttpRequest request = HttpRequest.newBuilder(URI.create(baseUrl + "/tts"))
                     .timeout(Duration.ofSeconds(timeoutSeconds))
                     .header("Content-Type", "application/json")

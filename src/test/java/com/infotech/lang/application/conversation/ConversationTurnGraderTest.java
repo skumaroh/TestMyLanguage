@@ -160,4 +160,14 @@ class ConversationTurnGraderTest {
         assertEquals(new PersonaVoice("FEMALE", "YOUNG"), PersonaVoice.of(young));
         assertTrue(PersonaProfiles.describe(young).contains("60 rupees a litre"));
     }
+
+    @Test
+    void personaVoiceTraitsPickAVoiceStyle() {
+        assertEquals(com.infotech.lang.application.ai.VoiceStyle.BASE, new PersonaVoice("UNKNOWN", "ADULT").style());
+        assertEquals(com.infotech.lang.application.ai.VoiceStyle.BASE, new PersonaVoice("MALE", "ADULT").style());
+        com.infotech.lang.application.ai.VoiceStyle granny = new PersonaVoice("FEMALE", "OLD").style();
+        assertTrue(granny.pitch() > 0 && granny.rate() < 1.0);
+        assertTrue(new PersonaVoice("FEMALE", "ADULT").style().pitch() > new PersonaVoice("MALE", "OLD").style().pitch());
+        assertEquals(com.infotech.lang.application.ai.VoiceStyle.BASE, new PersonaVoice("ROBOT", "OLD").style());
+    }
 }

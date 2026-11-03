@@ -1,6 +1,7 @@
 package com.infotech.lang.application.voice;
 
 import com.infotech.lang.application.ai.TextToSpeech;
+import com.infotech.lang.application.ai.VoiceStyle;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -23,7 +24,7 @@ public class SpeechRegistry {
     static final int MAX_AUDIO = 150;
 
     /** A registered line. */
-    public record Line(String language, String text) {
+    public record Line(String language, String text, VoiceStyle style) {
     }
 
     private final TextToSpeech speech;
@@ -40,9 +41,15 @@ public class SpeechRegistry {
 
     /** The key under which {@code /api/tts/{key}} will speak this line. */
     public String register(String language, String text) {
-        String key = keyOf(language, text);
+        return register(language, text, VoiceStyle.BASE);
+    }
+
+    /** Same, with a coloured voice (pitch and speed); a different style gives a different key and its own cached audio. */
+    public String register(String language, String text, VoiceStyle style) {
+        VoiceStyle s = style == null ? VoiceStyle.BASE : style;
+        String key = keyOf(language, text, s);
         synchronized (lines) {
-            lines.put(key, new Line(language, text));
+            lines.put(key, new Line(language, text, s));
         }
         return key;
     }
@@ -68,7 +75,7 @@ public class SpeechRegistry {
                 return Optional.of(cached);
             }
         }
-        TextToSpeech.Result result = speech.synthesize(line.language(), line.text());
+        TextToSpeech.Result result = speech.synthesize(line.language(), line.text(), line.style());
         if (!result.ok()) {
             return Optional.empty();
         }
@@ -79,9 +86,15 @@ public class SpeechRegistry {
     }
 
     static String keyOf(String language, String text) {
+        return keyOf(language, text, VoiceStyle.BASE);
+    }
+
+    static String keyOf(String language, String text, VoiceStyle style) {
         try {
             MessageDigest sha = MessageDigest.getInstance("SHA-256");
-            byte[] digest = sha.digest((language + "\u0000" + text).getBytes(StandardCharsets.UTF_8));
+            // the base voice hashes exactly as before, so existing keys do not change
+            String voice = style == null || style.isBase() ? "" : "\u0000" + Math.round(style.pitch() * 10) + "\u0000" + Math.round(style.rate() * 100);
+            byte[] digest = sha.digest((language + "\u0000" + text + voice).getBytes(StandardCharsets.UTF_8));
             return HexFormat.of().formatHex(digest, 0, 16);
         } catch (NoSuchAlgorithmException e) {
             throw new IllegalStateException(e);
