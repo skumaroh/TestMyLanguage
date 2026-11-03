@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.infotech.lang.application.ai.TextToSpeech;
+import com.infotech.lang.application.ai.VoiceStyle;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.Test;
 
@@ -78,5 +79,43 @@ class SpeechRegistryTest {
             registry.register("tamil", "line " + i);
         }
         assertFalse(registry.isKnown(first));
+    }
+
+    @Test
+    void aColouredVoiceGetsItsOwnKeyAndTheBaseKeyIsUnchanged() {
+        String base = SpeechRegistry.keyOf("tamil", "வணக்கம்");
+        assertEquals(base, SpeechRegistry.keyOf("tamil", "வணக்கம்", VoiceStyle.BASE));
+        String granny = SpeechRegistry.keyOf("tamil", "வணக்கம்", new VoiceStyle(3.0, 0.88));
+        assertNotEquals(base, granny);
+        assertNotEquals(granny, SpeechRegistry.keyOf("tamil", "வணக்கம்", new VoiceStyle(3.5, 0.88)));
+        assertEquals(granny, SpeechRegistry.keyOf("tamil", "வணக்கம்", new VoiceStyle(3.0, 0.88)));
+    }
+
+    @Test
+    void theStyleReachesTheSpeechServiceAndIsCachedPerStyle() {
+        java.util.List<VoiceStyle> seen = new java.util.ArrayList<>();
+        TextToSpeech spy = new TextToSpeech() {
+            @Override
+            public boolean isConfigured() {
+                return true;
+            }
+
+            @Override
+            public Result synthesize(String language, String text) {
+                return Result.success(new byte[] {1}, 1);
+            }
+
+            @Override
+            public Result synthesize(String language, String text, VoiceStyle style) {
+                seen.add(style);
+                return Result.success(new byte[] {1}, 1);
+            }
+        };
+        SpeechRegistry registry = new SpeechRegistry(spy);
+        VoiceStyle granny = new VoiceStyle(3.0, 0.88);
+        String key = registry.register("tamil", "வணக்கம்", granny);
+        registry.audioFor(key);
+        registry.audioFor(key);
+        assertEquals(java.util.List.of(granny), seen);
     }
 }

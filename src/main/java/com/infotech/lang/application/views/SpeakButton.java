@@ -20,12 +20,17 @@ public class SpeakButton extends Button {
      *                 fallback (and the only voice when the service is not configured or does not answer)
      */
     public SpeakButton(String text, String language, SpeechRegistry registry) {
+        this(text, language, registry, com.infotech.lang.application.ai.VoiceStyle.BASE);
+    }
+
+    /** Same, with the voice coloured (pitch and speed) for a persona; only the Meta voice can be coloured, the browser fallback cannot. */
+    public SpeakButton(String text, String language, SpeechRegistry registry, com.infotech.lang.application.ai.VoiceStyle style) {
         super("▶ Listen");
         addThemeVariants(ButtonVariant.LUMO_TERTIARY, ButtonVariant.LUMO_SMALL);
         getElement().setAttribute("aria-label", "Listen to this line");
         boolean english = "english".equalsIgnoreCase(language);
         String tag = english ? "en-US" : "hindi".equalsIgnoreCase(language) ? "hi-IN" : "ta-IN";
-        String url = registry != null && registry.isEnabled() ? "/api/tts/" + registry.register(language, text) : "";
+        String url = registry != null && registry.isEnabled() ? "/api/tts/" + registry.register(language, text, style) : "";
         addAttachListener(e -> getElement().executeJs("window.tmlSpeak && window.tmlSpeak.attach(this, $0, $1, $2)", text, tag, url));
     }
 }

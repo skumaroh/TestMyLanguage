@@ -12,6 +12,11 @@ public interface TextToSpeech {
      */
     Result synthesize(String language, String text);
 
+    /** Same, with the voice coloured (pitch and speed). Services that cannot colour a voice just speak in the base voice. */
+    default Result synthesize(String language, String text, VoiceStyle style) {
+        return synthesize(language, text);
+    }
+
     /** {@code wav} is 16-bit mono PCM. {@code error} is a short description with no text in it. */
     record Result(boolean ok, byte[] wav, long latencyMs, String error) {
         public static Result success(byte[] wav, long latencyMs) {
