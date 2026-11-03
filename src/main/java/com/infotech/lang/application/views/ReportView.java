@@ -136,6 +136,7 @@ public class ReportView extends VerticalLayout implements BeforeEnterObserver {
         }
         add(accordion);
         add(new Button("See all my results", e -> getUI().ifPresent(ui -> ui.navigate("assessment/history"))));
+        add(new Button("Give feedback", e -> getUI().ifPresent(ui -> ui.navigate("feedback/results"))));
     }
 
     private Div questionView(ReportSnapshot.Question q) {
