@@ -10,6 +10,9 @@ import com.infotech.lang.application.data.entity.User;
 import com.infotech.lang.application.data.repository.UserRepository;
 import com.infotech.lang.application.security.SecurityService;
 import com.vaadin.flow.component.button.Button;
+import com.infotech.lang.application.voice.SpeechRegistry;
+import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.html.H4;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.html.H2;
@@ -46,6 +49,8 @@ public class ConversationAdminView extends VerticalLayout {
     private final SecurityService securityService;
     private final UserRepository userRepository;
     private final String language;
+    private final transient SpeechRegistry speechRegistry;
+    private final VerticalLayout listen = new VerticalLayout();
 
     private final Grid<Conversation> grid = new Grid<>(Conversation.class, false);
     private final TextArea preview = new TextArea("Selected conversation");
@@ -54,12 +59,13 @@ public class ConversationAdminView extends VerticalLayout {
     private final Button retire = new Button("Retire");
 
     public ConversationAdminView(ConversationLibrary library, PersonaLineReview lineReview, SecurityService securityService, UserRepository userRepository,
-                                 LanguageContext languageContext) {
+                                 LanguageContext languageContext, SpeechRegistry speechRegistry) {
         this.library = library;
         this.lineReview = lineReview;
         this.securityService = securityService;
         this.userRepository = userRepository;
         this.language = languageContext.getLanguage();
+        this.speechRegistry = speechRegistry;
 
         add(new H2("Conversations (" + language + ")"));
         add(new Paragraph("Meta writes imagined everyday conversations as drafts. Read each one, fix anything odd in the "
@@ -97,7 +103,9 @@ public class ConversationAdminView extends VerticalLayout {
         edit.addClickListener(e -> openEditor());
 
         add(new HorizontalLayout(count, generate, refresh));
-        add(grid, preview, new HorizontalLayout(verify, edit, retire));
+        listen.setPadding(false);
+        listen.setSpacing(false);
+        add(grid, preview, listen, new HorizontalLayout(verify, edit, retire));
         setWidthFull();
         reload();
     }
@@ -115,10 +123,12 @@ public class ConversationAdminView extends VerticalLayout {
         verify.setEnabled(c != null && !Conversation.VERIFIED.equals(c.getStatus()) && !Conversation.RETIRED.equals(c.getStatus()));
         edit.setEnabled(c != null && !Conversation.RETIRED.equals(c.getStatus()));
         retire.setEnabled(c != null && !Conversation.RETIRED.equals(c.getStatus()));
+        listen.removeAll();
         if (c == null) {
             preview.setValue("");
             return;
         }
+        fillListen(c);
         StringBuilder sb = new StringBuilder();
         sb.append(c.getScenarioTitle()).append("  [").append(c.getStatus()).append(", ").append(c.getDifficulty()).append("]\n");
         sb.append("Persona: ").append(c.getPersonaName()).append(" – ").append(nullToEmpty(c.getPersonaDescription())).append("\n");
@@ -150,6 +160,38 @@ public class ConversationAdminView extends VerticalLayout {
         } catch (RuntimeException e) {
             return "\nLIVE LINES FROM META: could not be read.\n";
         }
+    }
+
+    /** One Listen button per line in the tested language, so an admin can hear the draft before verifying it. */
+    private void fillListen(Conversation c) {
+        try {
+            listen.add(new H4("Listen (" + language + " lines)"));
+            addListenRow("Opening", c.getIntroLine());
+            for (ConversationObjective o : library.objectivesOf(c.getId())) {
+                addListenRow(o.getPosition() + ". persona asks", o.getFallbackLine());
+            }
+            addListenRow("Closing", c.getClosingLine());
+            List<PersonaLineReview.LiveLine> live = lineReview.liveLines(c.getId());
+            for (int i = 0; i < Math.min(live.size(), 10); i++) {
+                addListenRow("live line after goal " + live.get(i).position(), live.get(i).next());
+            }
+        } catch (RuntimeException e) {
+            listen.add(new Paragraph("The Listen buttons could not be prepared."));
+        }
+    }
+
+    private void addListenRow(String label, String text) {
+        if (text == null || text.isBlank()) {
+            return;
+        }
+        Span name = new Span(label);
+        name.setWidth("190px");
+        name.getStyle().set("flex-shrink", "0").set("color", "var(--lumo-secondary-text-color)");
+        Span line = new Span(text);
+        HorizontalLayout row = new HorizontalLayout(name, new SpeakButton(text, language, speechRegistry), line);
+        row.setAlignItems(Alignment.CENTER);
+        row.setSpacing(true);
+        listen.add(row);
     }
 
     private static String nullToEmpty(String s) {
