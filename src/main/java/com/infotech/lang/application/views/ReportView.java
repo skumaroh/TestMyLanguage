@@ -135,6 +135,12 @@ public class ReportView extends VerticalLayout implements BeforeEnterObserver {
             accordion.add(b.title() + " – " + b.correct() + " of " + b.asked(), panel);
         }
         add(accordion);
+        if (com.infotech.lang.application.report.Certificate.eligible(r)) {
+            Button certificate = new Button("Print your certificate", e -> getUI().ifPresent(ui -> ui.navigate("assessment/certificate",
+                    com.vaadin.flow.router.QueryParameters.simple(java.util.Map.of("attempt", String.valueOf(r.attemptId()))))));
+            certificate.addThemeVariants(com.vaadin.flow.component.button.ButtonVariant.LUMO_PRIMARY);
+            add(certificate);
+        }
         add(new Button("See all my results", e -> getUI().ifPresent(ui -> ui.navigate("assessment/history"))));
         add(new Button("Give feedback", e -> getUI().ifPresent(ui -> ui.navigate("feedback/results"))));
     }
