@@ -54,6 +54,10 @@ public class MmsTextToSpeech implements TextToSpeech {
         }
         if (line.length() > MAX_CHARS) {
             line = line.substring(0, MAX_CHARS);
+            int stop = Math.max(line.lastIndexOf('.'), Math.max(line.lastIndexOf('!'), line.lastIndexOf('?')));
+            if (stop > MAX_CHARS / 2) {
+                line = line.substring(0, stop + 1);
+            }
         }
         long started = System.nanoTime();
         int status = 0;
@@ -81,7 +85,8 @@ public class MmsTextToSpeech implements TextToSpeech {
     }
 
     static String language(String language) {
-        return "hindi".equals(language == null ? "" : language.toLowerCase(Locale.ROOT)) ? "hindi" : "tamil";
+        String l = language == null ? "" : language.toLowerCase(Locale.ROOT);
+        return "hindi".equals(l) ? "hindi" : "english".equals(l) ? "english" : "tamil";
     }
 
     private void record(Result result, int httpStatus) {

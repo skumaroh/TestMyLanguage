@@ -36,5 +36,6 @@ class MmsTextToSpeechTest {
         assertEquals("hindi", MmsTextToSpeech.language("Hindi"));
         assertEquals("tamil", MmsTextToSpeech.language("tamil"));
         assertEquals("tamil", MmsTextToSpeech.language(null));
+        assertEquals("english", MmsTextToSpeech.language("English"));
     }
 }

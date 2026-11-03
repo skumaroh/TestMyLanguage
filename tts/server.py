@@ -1,10 +1,10 @@
 """Speech service for the assessment apps: text in Tamil or Hindi in, a WAV out, using Meta's open-source MMS-TTS models
-(facebook/mms-tts-tam, facebook/mms-tts-hin; CC-BY-NC 4.0, so non-commercial use only).
+(facebook/mms-tts-tam, facebook/mms-tts-hin, facebook/mms-tts-eng; CC-BY-NC 4.0, so non-commercial use only).
 
-POST /tts   {"language": "tamil" | "hindi", "text": "..."}  ->  audio/wav (16-bit mono PCM)
+POST /tts   {"language": "tamil" | "hindi" | "english", "text": "..."}  ->  audio/wav (16-bit mono PCM)
 GET  /healthz                                                 ->  200 once the models are loaded
 
-Only the languages named in TTS_LANGUAGES (default "tamil,hindi") are loaded, so each language's pod can keep to one model.
+Only the languages named in TTS_LANGUAGES (default "tamil,hindi"; "english" may be added) are loaded, so each language's pod can keep to one model.
 The weights are baked into the image at build time (HF_HUB_OFFLINE=1 at run time). The service has no state and no secrets; it is
 reachable only inside the cluster. It never logs the text it is asked to speak.
 """
@@ -18,10 +18,11 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 import numpy as np
 import torch
+import textnorm
 from transformers import AutoTokenizer, VitsModel
 
-REPOS = {"tamil": "facebook/mms-tts-tam", "hindi": "facebook/mms-tts-hin"}
-SCRIPT = {"tamil": re.compile(r"[஀-௿]"), "hindi": re.compile(r"[ऀ-ॿ]")}
+REPOS = {"tamil": "facebook/mms-tts-tam", "hindi": "facebook/mms-tts-hin", "english": "facebook/mms-tts-eng"}
+SCRIPT = {"tamil": re.compile(r"[஀-௿]"), "hindi": re.compile(r"[ऀ-ॿ]"), "english": re.compile(r"[a-z]")}
 MAX_CHARS = 400
 MAX_BODY = 4096
 
@@ -42,6 +43,8 @@ def load_models():
 
 def clean(language, text):
     """Keeps the text the voice can read: the language's script, spaces and basic punctuation."""
+    if language == "english":
+        return textnorm.english(text, MAX_CHARS) if SCRIPT[language].search(textnorm.english(text, MAX_CHARS)) else ""
     text = re.sub(r"\s+", " ", text or "").strip()
     text = re.sub(r"[^ऀ-ॿ஀-௿ .,!?;:'\-]", "", text)
     return text[:MAX_CHARS] if SCRIPT[language].search(text) else ""
