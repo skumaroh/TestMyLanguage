@@ -50,15 +50,17 @@ public class ClipAdminView extends VerticalLayout {
     private final Paragraph counts = new Paragraph();
     private final Grid<VideoClip> grid = new Grid<>(VideoClip.class, false);
     private final Div player = new Div();
-    private final Paragraph details = new Paragraph();
+    private final Div details = new Div();
+    private final transient com.infotech.lang.application.voice.SpeechRegistry speechRegistry;
     private final Button verify = new Button("Verify");
     private final Button edit = new Button("Edit");
     private final Button retire = new Button("Retire");
     private final ComboBox<String> filter = new ComboBox<>("Show");
 
     public ClipAdminView(VideoLibrary library, SecurityService securityService, UserRepository userRepository,
-                         LanguageContext languageContext) {
+                         LanguageContext languageContext, com.infotech.lang.application.voice.SpeechRegistry speechRegistry) {
         this.library = library;
+        this.speechRegistry = speechRegistry;
         this.securityService = securityService;
         this.userRepository = userRepository;
         this.language = languageContext.getLanguage();
@@ -151,7 +153,7 @@ public class ClipAdminView extends VerticalLayout {
         retire.setEnabled(c != null && !VideoClip.RETIRED.equals(c.getStatus()));
         player.removeAll();
         if (c == null) {
-            details.setText("");
+            details.removeAll();
             return;
         }
         String url = MediaUrls.forBlob("video", AssessmentMediaService.VIDEO_CONTAINER, c.getBlobName());
@@ -160,9 +162,34 @@ public class ClipAdminView extends VerticalLayout {
         } else {
             player.add(new Html("<img src=\"" + url.replace("/video/", "/image/") + "\" alt=\"\" style=\"max-width:360px;width:100%\"/>"));
         }
-        details.setText("English: " + nz(c.getEnglish()) + "\n" + language + ": " + nz(c.getExpectedText()) + "\nOther accepted: " + nz(c.getVariants())
-                + "\nMeta says clear: " + nz(c.getMetaClear()) + ". Possible problems: " + nz(c.getMetaProblems()) + "  [" + c.getDifficulty() + "]");
-        details.getStyle().set("white-space", "pre-line");
+        // every line in the tested language has its Listen button right after it, on the same line
+        details.removeAll();
+        details.add(detailLine("English: " + nz(c.getEnglish()), null));
+        details.add(detailLine(language + ": ", c.getExpectedText()));
+        boolean first = true;
+        for (String variant : nz(c.getVariants()).split(";")) {
+            if (!variant.isBlank()) {
+                details.add(detailLine(first ? "Other accepted: " : "                      ", variant.trim()));
+                first = false;
+            }
+        }
+        if (first) {
+            details.add(detailLine("Other accepted: ", null));
+        }
+        details.add(detailLine("Meta says clear: " + nz(c.getMetaClear()) + ". Possible problems: " + nz(c.getMetaProblems())
+                + "  [" + c.getDifficulty() + "]", null));
+    }
+
+    /** A line of text; when {@code spoken} is given it follows the label and is followed directly by its Listen button. */
+    private Div detailLine(String label, String spoken) {
+        Div d = new Div();
+        d.getStyle().set("white-space", "pre-wrap").set("padding", "2px 0");
+        d.add(new com.vaadin.flow.component.html.Span(label));
+        if (spoken != null && !spoken.isBlank()) {
+            d.add(new com.vaadin.flow.component.html.Span(spoken), new com.vaadin.flow.component.html.Span(" "),
+                    new SpeakButton(spoken, language, speechRegistry));
+        }
+        return d;
     }
 
     private static String nz(String s) {
