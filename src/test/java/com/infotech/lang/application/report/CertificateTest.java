@@ -37,11 +37,15 @@ class CertificateTest {
     }
 
     @Test
-    void theNameIsTheDisplayNameThenFirstAndLastThenLearner() {
-        assertEquals("Asha K", Certificate.nameOf("  Asha K ", "A", "B"));
-        assertEquals("Asha Rao", Certificate.nameOf(" ", "Asha", "Rao"));
-        assertEquals("Asha", Certificate.nameOf(null, "Asha", null));
-        assertEquals("Learner", Certificate.nameOf(null, null, null));
+    void theNameNeedsBothFirstAndLastNameAndIsCleaned() {
+        assertEquals("Asha Rao", Certificate.fullName("  Asha ", "Rao"));
+        assertEquals("Asha Rao", Certificate.fullName("Asha", " \t Rao\n"));
+        assertEquals("", Certificate.fullName("Asha", null));
+        assertEquals("", Certificate.fullName(null, "Rao"));
+        assertEquals("", Certificate.fullName(" ", " "));
+        assertEquals("அஷா குமார்", Certificate.fullName("அஷா", "குமார்"));
+        assertEquals(Certificate.MAX_NAME_PART, Certificate.cleanNamePart("x".repeat(500)).length());
+        assertEquals("", Certificate.cleanNamePart(null));
         assertTrue(Certificate.DISCLAIMER.contains("not an accredited qualification"));
     }
 }

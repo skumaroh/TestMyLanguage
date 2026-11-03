@@ -44,12 +44,21 @@ public final class Certificate {
         return "hindi".equalsIgnoreCase(r.language()) ? "Hindi" : "Tamil";
     }
 
-    /** The name on the certificate: the display name, else first and last name, else a neutral word. */
-    public static String nameOf(String displayName, String firstName, String lastName) {
-        if (displayName != null && !displayName.isBlank()) {
-            return displayName.trim();
+    public static final int MAX_NAME_PART = 100;
+
+    /** First and last name joined by one space; empty when either is missing (the certificate needs both). */
+    public static String fullName(String firstName, String lastName) {
+        String f = cleanNamePart(firstName);
+        String l = cleanNamePart(lastName);
+        return f.isEmpty() || l.isEmpty() ? "" : f + " " + l;
+    }
+
+    /** One part of a name: trimmed, inner spaces squeezed, control characters removed, at most {@value #MAX_NAME_PART} characters. */
+    public static String cleanNamePart(String text) {
+        if (text == null) {
+            return "";
         }
-        String full = ((firstName == null ? "" : firstName.trim()) + " " + (lastName == null ? "" : lastName.trim())).trim();
-        return full.isEmpty() ? "Learner" : full;
+        String t = text.replaceAll("\\p{Cntrl}", " ").replaceAll("\\s+", " ").trim();
+        return t.length() > MAX_NAME_PART ? t.substring(0, MAX_NAME_PART).trim() : t;
     }
 }
