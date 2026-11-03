@@ -24,7 +24,7 @@ import org.springframework.security.core.userdetails.UserDetails;
  * Welcome and activity introductions. The words are Meta-written texts an admin has approved (or a plain built-in
  * text until then). The "Listen" button uses the browser's own voice, which is not a Meta product.
  */
-@Route("welcome")
+@Route(value = "welcome", layout = MainLayout.class)
 @PageTitle("Welcome | TestMyLanguage")
 @PermitAll
 public class WelcomeView extends VerticalLayout {
@@ -62,6 +62,7 @@ public class WelcomeView extends VerticalLayout {
                 + "The Listen button uses your browser's voice (not Meta).");
         note.getStyle().set("color", "var(--lumo-secondary-text-color)").set("font-size", "var(--lumo-font-size-s)");
         add(note);
+        add(new Button("Start the assessment", e -> getUI().ifPresent(ui -> ui.navigate("assessment/words"))));
     }
 
     private Div card(String heading, ProctorSlot slot, String name) {

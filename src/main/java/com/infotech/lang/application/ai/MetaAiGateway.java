@@ -10,6 +10,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
+import java.util.Base64;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -65,7 +66,7 @@ public class MetaAiGateway implements AiGateway {
         long started = System.nanoTime();
         try {
             HttpRequest httpRequest = HttpRequest.newBuilder(URI.create(baseUrl + "/chat/completions"))
-                    .timeout(Duration.ofSeconds(timeoutSeconds))
+                    .timeout(Duration.ofSeconds(request.timeoutSeconds() != null ? request.timeoutSeconds() : timeoutSeconds))
                     .header("Authorization", "Bearer " + apiKey)
                     .header("Content-Type", "application/json")
                     .POST(HttpRequest.BodyPublishers.ofString(buildBody(request)))
@@ -93,12 +94,30 @@ public class MetaAiGateway implements AiGateway {
         }
     }
 
-    private String buildBody(AiRequest request) throws IOException {
+    String buildBody(AiRequest request) throws IOException {
         ObjectNode body = mapper.createObjectNode();
         body.put("model", model);
         ArrayNode messages = body.putArray("messages");
         messages.addObject().put("role", "system").put("content", request.systemPrompt());
-        messages.addObject().put("role", "user").put("content", request.userPrompt());
+        ObjectNode user = messages.addObject();
+        user.put("role", "user");
+        if (request.imagePng() == null && request.videoMp4() == null) {
+            user.put("content", request.userPrompt());
+        } else {
+            ArrayNode parts = user.putArray("content");
+            parts.addObject().put("type", "text").put("text", request.userPrompt());
+            if (request.videoMp4() != null) {
+                ObjectNode video = parts.addObject();
+                video.put("type", "video_url");
+                video.putObject("video_url").put("url",
+                        "data:video/mp4;base64," + Base64.getEncoder().encodeToString(request.videoMp4()));
+            } else {
+                ObjectNode image = parts.addObject();
+                image.put("type", "image_url");
+                image.putObject("image_url").put("url",
+                        "data:image/png;base64," + Base64.getEncoder().encodeToString(request.imagePng()));
+            }
+        }
         ObjectNode format = body.putObject("response_format");
         format.put("type", "json_schema");
         ObjectNode schema = format.putObject("json_schema");

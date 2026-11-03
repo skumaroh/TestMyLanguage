@@ -28,7 +28,7 @@ import org.springframework.security.core.userdetails.UserDetails;
  * Admin-only review of the proctor texts. A newly written text is a PENDING candidate that students never see.
  * An admin reads it and chooses Approve, Edit and approve, or Discard.
  */
-@Route("admin/proctor-texts")
+@Route(value = "admin/proctor-texts", layout = MainLayout.class)
 @PageTitle("Proctor texts | TestMyLanguage")
 @RolesAllowed("ADMIN")
 public class ProctorReviewView extends VerticalLayout {

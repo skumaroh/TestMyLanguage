@@ -21,7 +21,7 @@ import org.springframework.security.core.userdetails.UserDetails;
  * Signed-in landing page. For step 1 it shows who is signed in and proves that the deployment can
  * reach PostgreSQL and Azure Blob Storage. Later steps replace it with the assessment start page.
  */
-@Route("")
+@Route(value = "", layout = MainLayout.class)
 @PageTitle("Home | TestMyLanguage")
 @PermitAll
 public class HomeView extends VerticalLayout {
@@ -48,7 +48,10 @@ public class HomeView extends VerticalLayout {
 
         add(new RouterLink("Start: welcome and activity introductions", WelcomeView.class));
         if (isAdmin()) {
+            add(new RouterLink("Test Blocks", AdminBlocksView.class));
             add(new RouterLink("Admin: review the proctor texts", ProctorReviewView.class));
+            add(new RouterLink("Admin: handwriting check (shape comparison)", HandwritingCheckView.class));
+            add(new RouterLink("Admin: translation check (Meta grades meaning)", TranslationCheckView.class));
         }
 
         Button logout = new Button("Sign out", e -> securityService.logout());
