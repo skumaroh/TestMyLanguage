@@ -56,12 +56,13 @@ public class RegistrationView extends VerticalLayout {
     private void createRegistrationForm() {
         H2 title = new H2("Create Account");
         
-        firstNameField = new TextField("First Name");
-        firstNameField.setRequired(true);
+        firstNameField = new TextField("First Name (optional)");
+        firstNameField.setHelperText("Used on your certificate and to greet you. You can add it later.");
+        firstNameField.setMaxLength(100);
         firstNameField.setWidthFull();
 
-        lastNameField = new TextField("Last Name");
-        lastNameField.setRequired(true);
+        lastNameField = new TextField("Last Name (optional)");
+        lastNameField.setMaxLength(100);
         lastNameField.setWidthFull();
 
         displayNameField = new TextField("Display Name");
@@ -142,9 +143,9 @@ public class RegistrationView extends VerticalLayout {
         String teacherCode = teacherCodeField.getValue().trim();
 
         // Validate inputs
-        if (firstName.isEmpty() || lastName.isEmpty() || userName.isEmpty() || email.isEmpty() || 
+        if (userName.isEmpty() || email.isEmpty() || 
             password.isEmpty() || confirmPassword.isEmpty()) {
-            showError("All fields are required");
+            showError("Username, email and password are required");
             return;
         }
 
