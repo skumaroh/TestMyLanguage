@@ -105,6 +105,11 @@ public class ReportService {
     }
 
     /** A student's completed attempts, newest first. */
+    /** Admin progress report: the newest attempts of all students, finished or not. */
+    public List<AssessAttempt> allAttempts() {
+        return attempts.findTop500ByOrderByIdDesc();
+    }
+
     public List<AssessAttempt> history(UUID userId) {
         return attempts.findByUserIdAndStatusOrderByIdDesc(userId, "COMPLETED");
     }
