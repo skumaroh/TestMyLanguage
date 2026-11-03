@@ -12,6 +12,7 @@ import com.infotech.lang.application.security.SecurityService;
 import com.vaadin.flow.component.button.Button;
 import com.infotech.lang.application.voice.SpeechRegistry;
 import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H4;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.grid.Grid;
@@ -50,10 +51,9 @@ public class ConversationAdminView extends VerticalLayout {
     private final UserRepository userRepository;
     private final String language;
     private final transient SpeechRegistry speechRegistry;
-    private final VerticalLayout listen = new VerticalLayout();
 
     private final Grid<Conversation> grid = new Grid<>(Conversation.class, false);
-    private final TextArea preview = new TextArea("Selected conversation");
+    private final Div preview = new Div();
     private final Button verify = new Button("Verify");
     private final Button edit = new Button("Edit");
     private final Button retire = new Button("Retire");
@@ -83,9 +83,10 @@ public class ConversationAdminView extends VerticalLayout {
         grid.setHeight("320px");
         grid.asSingleSelect().addValueChangeListener(e -> showSelection(e.getValue()));
 
-        preview.setReadOnly(true);
         preview.setWidthFull();
         preview.setMinHeight("260px");
+        preview.getStyle().set("border", "1px solid var(--lumo-contrast-20pct)").set("border-radius", "var(--lumo-border-radius-m)")
+                .set("padding", "var(--lumo-space-m)").set("box-sizing", "border-box");
 
         IntegerField count = new IntegerField("How many to write");
         count.setValue(3);
@@ -103,9 +104,7 @@ public class ConversationAdminView extends VerticalLayout {
         edit.addClickListener(e -> openEditor());
 
         add(new HorizontalLayout(count, generate, refresh));
-        listen.setPadding(false);
-        listen.setSpacing(false);
-        add(grid, preview, listen, new HorizontalLayout(verify, edit, retire));
+        add(grid, new H4("Selected conversation"), preview, new HorizontalLayout(verify, edit, retire));
         setWidthFull();
         reload();
     }
@@ -123,75 +122,72 @@ public class ConversationAdminView extends VerticalLayout {
         verify.setEnabled(c != null && !Conversation.VERIFIED.equals(c.getStatus()) && !Conversation.RETIRED.equals(c.getStatus()));
         edit.setEnabled(c != null && !Conversation.RETIRED.equals(c.getStatus()));
         retire.setEnabled(c != null && !Conversation.RETIRED.equals(c.getStatus()));
-        listen.removeAll();
+        preview.removeAll();
         if (c == null) {
-            preview.setValue("");
             return;
         }
-        fillListen(c);
-        StringBuilder sb = new StringBuilder();
-        sb.append(c.getScenarioTitle()).append("  [").append(c.getStatus()).append(", ").append(c.getDifficulty()).append("]\n");
-        sb.append("Persona: ").append(c.getPersonaName()).append(" – ").append(nullToEmpty(c.getPersonaDescription())).append("\n");
-        sb.append("Voice: ").append(PersonaVoice.of(c).describe()).append(" (set \"gender\" and \"age_band\" in the persona box to change it)\n");
-        sb.append("Note to the learner: ").append(nullToEmpty(c.getSceneNote())).append("\n\n");
-        sb.append("OPENING: ").append(c.getIntroLine()).append("\n   (").append(nullToEmpty(c.getIntroEnglish())).append(")\n\n");
+        preview.add(line(c.getScenarioTitle() + "  [" + c.getStatus() + ", " + c.getDifficulty() + "]", null, true));
+        preview.add(line("Persona: " + c.getPersonaName() + " – " + nullToEmpty(c.getPersonaDescription()), null, false));
+        preview.add(line("Voice: " + PersonaVoice.of(c).describe() + " (set \"gender\" and \"age_band\" in the persona box to change it)", null, false));
+        preview.add(line("Note to the learner: " + nullToEmpty(c.getSceneNote()), null, false));
+        preview.add(gap());
+        // every line in the tested language has its Listen button right after it, on the same line
+        preview.add(line("OPENING: ", c.getIntroLine(), true));
+        preview.add(line("   (" + nullToEmpty(c.getIntroEnglish()) + ")", null, false));
+        preview.add(gap());
         for (ConversationObjective o : library.objectivesOf(c.getId())) {
-            sb.append(o.getPosition()).append(". ").append(o.getObjectiveEn()).append("\n   hint: ")
-                    .append(nullToEmpty(o.getVocabularyHint())).append("\n   persona asks: ").append(o.getFallbackLine()).append("\n");
+            preview.add(line(o.getPosition() + ". " + o.getObjectiveEn(), null, true));
+            preview.add(line("   hint: ", o.getVocabularyHint(), false));
+            preview.add(line("   persona asks: ", o.getFallbackLine(), false));
         }
-        sb.append(liveLinesText(c.getId()));
-        sb.append("\nCLOSING: ").append(c.getClosingLine()).append("\n   (").append(nullToEmpty(c.getClosingEnglish())).append(")");
-        preview.setValue(sb.toString());
+        addLiveLines(c.getId());
+        preview.add(gap());
+        preview.add(line("CLOSING: ", c.getClosingLine(), true));
+        preview.add(line("   (" + nullToEmpty(c.getClosingEnglish()) + ")", null, false));
     }
 
     /** The live lines Meta wrote in real attempts, so a good one can be copied into the stored objective. */
-    private String liveLinesText(Long id) {
+    private void addLiveLines(Long id) {
+        preview.add(gap());
         try {
             List<PersonaLineReview.LiveLine> lines = lineReview.liveLines(id);
             if (lines.isEmpty()) {
-                return "\nLIVE LINES FROM META: none yet (they appear after learners or admins try this conversation).\n";
+                preview.add(line("LIVE LINES FROM META: none yet (they appear after learners or admins try this conversation).", null, true));
+                return;
             }
-            StringBuilder sb = new StringBuilder("\nLIVE LINES FROM META (what the persona actually said in attempts; copy a good one into \"persona asks\" above):\n");
+            preview.add(line("LIVE LINES FROM META (what the persona actually said in attempts; copy a good one into \"persona asks\" above):",
+                    null, true));
             for (PersonaLineReview.LiveLine l : lines) {
-                sb.append("  after goal ").append(l.position()).append(" (x").append(l.times()).append("): ").append(l.next())
-                        .append("\n      answering: ").append(l.asked()).append("\n");
+                preview.add(line("   after goal " + l.position() + " (x" + l.times() + "): ", l.next(), false));
+                preview.add(line("         answering: " + l.asked(), null, false));
             }
-            return sb.toString();
         } catch (RuntimeException e) {
-            return "\nLIVE LINES FROM META: could not be read.\n";
+            preview.add(line("LIVE LINES FROM META: could not be read.", null, true));
         }
     }
 
-    /** One Listen button per line in the tested language, so an admin can hear the draft before verifying it. */
-    private void fillListen(Conversation c) {
-        try {
-            listen.add(new H4("Listen (" + language + " lines)"));
-            addListenRow("Opening", c.getIntroLine());
-            for (ConversationObjective o : library.objectivesOf(c.getId())) {
-                addListenRow(o.getPosition() + ". persona asks", o.getFallbackLine());
-            }
-            addListenRow("Closing", c.getClosingLine());
-            List<PersonaLineReview.LiveLine> live = lineReview.liveLines(c.getId());
-            for (int i = 0; i < Math.min(live.size(), 10); i++) {
-                addListenRow("live line after goal " + live.get(i).position(), live.get(i).next());
-            }
-        } catch (RuntimeException e) {
-            listen.add(new Paragraph("The Listen buttons could not be prepared."));
+    /**
+     * One line of the preview: {@code label} as plain text, then (when given) the line in the tested language followed directly by
+     * its Listen button on the same line.
+     */
+    private Div line(String label, String spoken, boolean bold) {
+        Div d = new Div();
+        d.getStyle().set("white-space", "pre-wrap").set("padding", "2px 0");
+        Span l = new Span(label);
+        if (bold) {
+            l.getStyle().set("font-weight", "600");
         }
+        d.add(l);
+        if (spoken != null && !spoken.isBlank()) {
+            d.add(new Span(spoken), new Span(" "), new SpeakButton(spoken, language, speechRegistry));
+        }
+        return d;
     }
 
-    private void addListenRow(String label, String text) {
-        if (text == null || text.isBlank()) {
-            return;
-        }
-        Span name = new Span(label);
-        name.setWidth("190px");
-        name.getStyle().set("flex-shrink", "0").set("color", "var(--lumo-secondary-text-color)");
-        Span line = new Span(text);
-        HorizontalLayout row = new HorizontalLayout(name, new SpeakButton(text, language, speechRegistry), line);
-        row.setAlignItems(Alignment.CENTER);
-        row.setSpacing(true);
-        listen.add(row);
+    private static Div gap() {
+        Div d = new Div();
+        d.setHeight("0.6em");
+        return d;
     }
 
     private static String nullToEmpty(String s) {
