@@ -14,6 +14,7 @@ import com.infotech.lang.application.conversation.ConversationObjectiveRepositor
 import com.infotech.lang.application.translation.SentencePicker;
 import com.infotech.lang.application.translation.TranslationItem;
 import com.infotech.lang.application.video.VideoClipRepository;
+import com.infotech.lang.application.video.VideoPicker;
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
@@ -45,12 +46,13 @@ public class ReportService {
     private final ConversationObjectiveRepository objectives;
     private final VideoClipRepository videoClips;
     private final ReportSummaryWriter writer;
+    private final VideoPicker videoPicker;
     private final JdbcTemplate jdbc;
     private final ObjectMapper mapper = new ObjectMapper();
 
     public ReportService(AssessAttemptRepository attempts, AssessBlockResultRepository blocks, AssessAnswerRepository answers,
                          AssessWordRepository words, SentencePicker sentences, ConversationObjectiveRepository objectives,
-                         VideoClipRepository videoClips, ReportSummaryWriter writer, JdbcTemplate jdbc) {
+                         VideoClipRepository videoClips, ReportSummaryWriter writer, JdbcTemplate jdbc, VideoPicker videoPicker) {
         this.attempts = attempts;
         this.blocks = blocks;
         this.answers = answers;
@@ -60,6 +62,16 @@ public class ReportService {
         this.videoClips = videoClips;
         this.writer = writer;
         this.jdbc = jdbc;
+        this.videoPicker = videoPicker;
+    }
+
+    /** Whether the video part can run for this attempt's language and level (false when it cannot be checked). */
+    private boolean videoAvailable(AssessAttempt attempt) {
+        try {
+            return videoPicker.isAvailable(attempt.getLanguage(), attempt.getLevel());
+        } catch (RuntimeException e) {
+            return false;
+        }
     }
 
     /**
@@ -75,7 +87,7 @@ public class ReportService {
             List<AssessBlockResult> results = blocks.findByAttemptIdOrderByBlockOrder(attemptId);
             int asked = results.stream().mapToInt(AssessBlockResult::getAsked).sum();
             int correct = results.stream().mapToInt(AssessBlockResult::getCorrect).sum();
-            boolean full = ReportMath.isFull(results.stream().map(AssessBlockResult::getBlockCode).toList());
+            boolean full = ReportMath.isFull(results.stream().map(AssessBlockResult::getBlockCode).toList(), videoAvailable(attempt));
             attempt.complete(asked, correct, ReportMath.percent(asked, correct), ReportMath.levelPassed(full, asked, correct));
             attempts.save(attempt);
         }
@@ -127,7 +139,7 @@ public class ReportService {
         }
         int asked = results.stream().mapToInt(AssessBlockResult::getAsked).sum();
         int correct = results.stream().mapToInt(AssessBlockResult::getCorrect).sum();
-        boolean full = ReportMath.isFull(results.stream().map(AssessBlockResult::getBlockCode).toList());
+        boolean full = ReportMath.isFull(results.stream().map(AssessBlockResult::getBlockCode).toList(), videoAvailable(attempt));
         BigDecimal percent = attempt.getPercent() != null ? attempt.getPercent() : ReportMath.percent(asked, correct);
         Boolean levelPassed = "COMPLETED".equals(attempt.getStatus()) ? attempt.getLevelPassed() : ReportMath.levelPassed(full, asked, correct);
         return new ReportSnapshot(attempt.getId(), attempt.getLanguage(), attempt.getLevel(),

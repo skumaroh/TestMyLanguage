@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.infotech.lang.application.ai.AiGateway;
 import com.infotech.lang.application.ai.AiRequest;
 import com.infotech.lang.application.ai.AiResult;
+import java.util.List;
 import org.junit.jupiter.api.Test;
 
 class TranslationGraderTest {
@@ -151,5 +152,20 @@ class TranslationGraderTest {
         assertTrue(g.correct());
         assertFalse(g.hasSpellingNote());
         assertEquals("", g.corrected());
+    }
+
+    @Test
+    void aSingleWordForTheMainThingIsEnoughForAClipAndAnExactAcceptedAnswerNeedsNoModel() {
+        String task = TranslationGrader.descriptionTask("tamil", "The fire is crackling.", List.of("தீ எரிகிறது", "தீ"), "நெருப்பு");
+        assertTrue(task.contains("A single word or a short phrase is enough"));
+        assertTrue(task.contains("The fire is crackling."));
+        assertTrue(task.contains("தீ எரிகிறது ; தீ"));
+        assertTrue(task.contains("<<<ANSWER\nநெருப்பு\nANSWER>>>"));
+        // an exact match of an accepted variant is correct without asking Meta (the gateway here would fail the test if called)
+        TranslationGrader g = new TranslationGrader(r -> {
+            throw new AssertionError("the model must not be called");
+        });
+        assertTrue(g.gradeDescription("tamil", "The fire is crackling.", List.of("தீ எரிகிறது", "தீ"), " தீ. ").correct());
+        assertFalse(g.gradeDescription("tamil", "x", List.of("தீ"), "   ").correct());
     }
 }
