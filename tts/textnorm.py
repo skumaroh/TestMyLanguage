@@ -19,9 +19,9 @@ def number_words(n):
 
 
 def english(text, max_chars=400):
-    text = re.sub(r"\s+", " ", text or "").strip()
-    text = re.sub(r"(\d+)\s*%", lambda m: m.group(1) + " percent", text)
-    text = re.sub(r"\d+", lambda m: " " + number_words(int(m.group(0))) + " ", text)
+    text = re.sub(r"\s+", " ", (text or "")[:2000]).strip()
+    text = text.replace("%", " percent ")
+    text = re.sub(r"\d+", lambda m: " " + (number_words(int(m.group(0))) if len(m.group(0)) <= 9 else " ".join(ONES[int(d)] for d in m.group(0))) + " ", text)
     text = text.lower()
     text = re.sub(r"[^a-z .,!?;:'\-]", " ", text)
     text = re.sub(r"\s+", " ", text).strip()
