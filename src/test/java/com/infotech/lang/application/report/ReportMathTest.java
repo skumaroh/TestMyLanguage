@@ -36,7 +36,14 @@ class ReportMathTest {
 
     @Test
     void fullMeansEveryBlockOfTheAssessmentWasTaken() {
-        assertTrue(ReportMath.isFull(List.of("WORDS", "DRAW_LETTERS", "AUDIO_WORDS", "TRANSLATION", "CONVERSATION")));
+        List<String> core = List.of("WORDS", "DRAW_LETTERS", "AUDIO_WORDS", "TRANSLATION", "CONVERSATION");
+        List<String> all = List.of("WORDS", "DRAW_LETTERS", "AUDIO_WORDS", "TRANSLATION", "CONVERSATION", "VIDEO");
+        assertTrue(ReportMath.isFull(all));
+        assertFalse(ReportMath.isFull(core));  // the video part is not optional
+        assertTrue(ReportMath.isFull(all, true));
+        assertFalse(ReportMath.isFull(core, true));  // video available but skipped: not a full assessment
+        assertTrue(ReportMath.isFull(core, false));  // too few verified clips for the video part to run: the core parts count
+        assertFalse(ReportMath.isFull(List.of("WORDS", "CONVERSATION"), false));
         assertFalse(ReportMath.isFull(List.of("WORDS", "CONVERSATION")));
         assertFalse(ReportMath.isFull(List.of()));
     }

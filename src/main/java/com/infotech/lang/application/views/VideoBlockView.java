@@ -150,9 +150,9 @@ public class VideoBlockView extends VerticalLayout implements BeforeEnterObserve
         }
         send.setEnabled(false);
         try {
-            TranslationGrader.Grade grade = grader.grade(language, current.getEnglish(), current.getExpectedText(), given);
+            TranslationGrader.Grade grade = grader.gradeDescription(language, current.getEnglish(), current.acceptedAnswers(), given);
             if (grade.verdict() == TranslationVerdict.ERROR) {
-                grade = grader.grade(language, current.getEnglish(), current.getExpectedText(), given);
+                grade = grader.gradeDescription(language, current.getEnglish(), current.acceptedAnswers(), given);
             }
             boolean graderFailed = grade.verdict() == TranslationVerdict.ERROR;
             String spellingNote = grade.hasSpellingNote()
