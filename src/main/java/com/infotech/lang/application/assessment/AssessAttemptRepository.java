@@ -11,4 +11,7 @@ public interface AssessAttemptRepository extends JpaRepository<AssessAttempt, Lo
     java.util.Optional<AssessAttempt> findFirstByUserIdAndStatusOrderByIdDesc(UUID userId, String status);
 
     List<AssessAttempt> findByUserIdAndStatusOrderByIdDesc(UUID userId, String status);
+
+    /** The newest attempts of every student, for the admin progress report. */
+    List<AssessAttempt> findTop500ByOrderByIdDesc();
 }
