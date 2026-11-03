@@ -145,7 +145,7 @@ public class ConversationTurnGrader {
                        String asked, List<Line> history, String reply) {
         String name = "hindi".equalsIgnoreCase(language) ? "Hindi (Devanagari script)" : "Tamil";
         StringBuilder sb = new StringBuilder();
-        sb.append("You are ").append(c.getPersonaName()).append(", an imaginary person. Scene: ").append(c.getScenarioTitle())
+        sb.append("You are ").append(c.getPersonaName()).append(", an imaginary man (or boy). Speak about yourself in the masculine forms of the language. Scene: ").append(c.getScenarioTitle())
                 .append(". You are talking with a beginner (Level ").append(c.getLevel()).append(") learner of ").append(name)
                 .append(". All details are imaginary.\n");
         sb.append(PersonaProfiles.describe(c)).append('\n');

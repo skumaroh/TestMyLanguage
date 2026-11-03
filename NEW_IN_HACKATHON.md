@@ -97,4 +97,4 @@ Deployment manifests (Argo CD, sealed secrets, ingress) live in the private `lan
 The Java and front-end dependencies of the application shell (Spring Boot, Vaadin, Azure SDK, PostgreSQL driver) are pre-existing and unchanged apart from the build changes above. No new npm packages were added.
 
 ## Known gaps
-Level 1 only. The Tamil and Hindi answers in the sentence list, and the Tamil and Hindi lines written by Meta for conversations and clips, are checked by the author and still need a native speaker's read. Speech in and out is still being checked with real voices. The MMS voice licence must be reviewed before any commercial use.
+Level 1 only. The Tamil and Hindi answers in the sentence list, and the Tamil and Hindi lines written by Meta for conversations and clips, are checked by the author and still need a native speaker's read. Speech in and out is still being checked with real voices. The MMS voice licence must be reviewed before any commercial use. Meta's MMS voices are single-speaker male voices, so every conversation persona is male; adding female and age-varied voices needs a multi-speaker voice model and is planned after the hackathon.
