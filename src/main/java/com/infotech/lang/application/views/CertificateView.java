@@ -8,6 +8,8 @@ import com.infotech.lang.application.report.ReportService;
 import com.infotech.lang.application.report.ReportSnapshot;
 import com.infotech.lang.application.security.SecurityService;
 import com.vaadin.flow.component.Html;
+import com.vaadin.flow.component.dependency.JsModule;
+import com.vaadin.flow.component.dependency.NpmPackage;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.html.Div;
@@ -31,10 +33,13 @@ import java.util.UUID;
 import org.springframework.security.core.userdetails.UserDetails;
 
 /**
- * A printable certificate for a learner who scored above 90% in a full assessment. It has no menu so that the browser's Print (or Save as
+ * A printable certificate for a learner who scored 90% or more in a full assessment. It has no menu so that the browser's Print (or Save as
  * PDF) gives a clean A4 landscape page. It is built from the stored report, so the numbers never change. The learner may correct the
  * name before printing; the corrected name is not stored. Only the learner (or an admin) can open it, and only when eligible.
  */
+@NpmPackage(value = "jspdf", version = "2.5.2")
+@NpmPackage(value = "html2canvas", version = "1.4.1")
+@JsModule("./components/certificate-pdf.js")
 @Route(value = "assessment/certificate")
 @PageTitle("Certificate | TestMyLanguage")
 @PermitAll
@@ -67,8 +72,8 @@ public class CertificateView extends VerticalLayout implements BeforeEnterObserv
                 return;
             }
             if (!Certificate.eligible(report.get())) {
-                message("A certificate is given for a full assessment with a score above " + Math.round(Certificate.THRESHOLD_PERCENT)
-                        + "%. This result does not reach that, so there is no certificate for it.");
+                message("A certificate is given for a full assessment with a score of " + Math.round(Certificate.THRESHOLD_PERCENT)
+                        + "% or more. This result does not reach that, so there is no certificate for it.");
                 return;
             }
             show(report.get(), nameOf(attempt.get().getUserId()));
@@ -93,12 +98,14 @@ public class CertificateView extends VerticalLayout implements BeforeEnterObserv
         nameBox.addValueChangeListener(e -> name.setText(e.getValue() == null || e.getValue().isBlank() ? "Learner" : e.getValue().trim()));
         nameBox.addClassName("no-print");
 
-        Button print = new Button("Print / Save as PDF");
-        print.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+        Button print = new Button("Print");
+        print.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
         print.getElement().executeJs("this.addEventListener('click', () => window.print());");
+        Button download = new Button("Download PDF");
+        download.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
         Button back = new Button("Back to my results", e -> getUI().ifPresent(ui -> ui.navigate("assessment/report",
                 QueryParameters.simple(Map.of("attempt", String.valueOf(r.attemptId()))))));
-        HorizontalLayout buttons = new HorizontalLayout(print, back);
+        HorizontalLayout buttons = new HorizontalLayout(download, print, back);
         buttons.addClassName("no-print");
         add(nameBox, buttons);
 
@@ -120,6 +127,10 @@ public class CertificateView extends VerticalLayout implements BeforeEnterObserv
         disclaimer.getStyle().set("font-size", "0.8em").set("color", "#555").set("margin-top", "1.5em");
         page.add(brand, title, awarded, name, did, when, number, disclaimer);
         add(page);
+        // the PDF is made in the browser from the page as shown (so a Tamil or Hindi name is drawn correctly), including a corrected name
+        download.getElement().executeJs("const page = $0, file = $1; this.addEventListener('click', () => "
+                + "{ if (window.tmlCertificate) { window.tmlCertificate.download(page, file); } });",
+                page.getElement(), "TestMyLanguage-certificate-" + Certificate.number(r) + ".pdf");
     }
 
     private static Paragraph line(String text) {

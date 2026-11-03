@@ -6,7 +6,7 @@ import java.util.Locale;
 
 /**
  * Who earns a certificate and what is printed on it. Decided in Java from the stored report numbers only (never by a model): a full
- * assessment, completed, with an overall score strictly above {@value #THRESHOLD_PERCENT}%.
+ * assessment, completed, with an overall score of {@value #THRESHOLD_PERCENT}% or more.
  */
 public final class Certificate {
 
@@ -20,7 +20,7 @@ public final class Certificate {
     }
 
     public static boolean eligible(ReportSnapshot r) {
-        return r != null && r.fullAssessment() && r.percent() > THRESHOLD_PERCENT + 1e-9;
+        return r != null && r.fullAssessment() && r.percent() >= THRESHOLD_PERCENT - 1e-9;
     }
 
     /** For example {@code TML-2026-000123}: the year of completion and the attempt number. */

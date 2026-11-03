@@ -15,10 +15,10 @@ class CertificateTest {
     }
 
     @Test
-    void onlyAFullAssessmentStrictlyAbove90PercentEarnsACertificate() {
+    void onlyAFullAssessmentOf90PercentOrMoreEarnsACertificate() {
+        assertTrue(Certificate.eligible(report(90.0, true, "2026-11-03T12:00:00Z", "tamil")));
         assertTrue(Certificate.eligible(report(90.01, true, "2026-11-03T12:00:00Z", "tamil")));
         assertTrue(Certificate.eligible(report(100, true, "2026-11-03T12:00:00Z", "hindi")));
-        assertFalse(Certificate.eligible(report(90.0, true, "2026-11-03T12:00:00Z", "tamil")));
         assertFalse(Certificate.eligible(report(89.99, true, "2026-11-03T12:00:00Z", "tamil")));
         assertFalse(Certificate.eligible(report(97, false, "2026-11-03T12:00:00Z", "tamil")));
         assertFalse(Certificate.eligible(null));
