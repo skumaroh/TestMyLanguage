@@ -56,6 +56,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 @Route(value = "assessment/translation", layout = MainLayout.class)
 @PageTitle("Translation | TestMyLanguage")
 @JsModule("./components/transliterate.js")
+@JsModule("./components/speak.js")
 @PermitAll
 public class TranslationBlockView extends VerticalLayout {
 
@@ -71,6 +72,7 @@ public class TranslationBlockView extends VerticalLayout {
     private final SentencePicker picker;
     private final SpellingSuggester speller;
     private final SpeechToText speech;
+    private final transient com.infotech.lang.application.voice.SpeechRegistry speechRegistry;
     private boolean voiceUsed;
     private String voiceText = "";
     private Div suggestionRow;
@@ -96,12 +98,14 @@ public class TranslationBlockView extends VerticalLayout {
                                 TranslationGrader grader,
                                 SpellingSuggester speller,
                                 SpeechToText speech,
-                                LanguageContext languageContext) {
+                                LanguageContext languageContext,
+                                com.infotech.lang.application.voice.SpeechRegistry speechRegistry) {
         this.assessment = assessment;
         this.grader = grader;
         this.picker = picker;
         this.speller = speller;
         this.speech = speech;
+        this.speechRegistry = speechRegistry;
         this.language = languageContext.getLanguage();
         setAlignItems(Alignment.CENTER);
         setMaxWidth("720px");
@@ -325,6 +329,11 @@ public class TranslationBlockView extends VerticalLayout {
         for (String word : question.tiles()) {
             Button tile = new Button(word);
             tile.getStyle().set("font-size", "1.2em");
+            // tapping a tile also says the word, so the learner hears how it is pronounced (Meta's MMS voice, browser voice as fallback)
+            String tag = "hindi".equalsIgnoreCase(language) ? "hi-IN" : "ta-IN";
+            String audioUrl = speechRegistry != null && speechRegistry.isEnabled() ? "/api/tts/" + speechRegistry.register(language, word) : "";
+            tile.addAttachListener(a -> tile.getElement().executeJs(
+                    "window.tmlSpeak && window.tmlSpeak.speakOn(this, $0, $1, $2)", word, tag, audioUrl));
             tile.addClickListener(e -> {
                 tapped.add(word);
                 tile.setEnabled(false);
