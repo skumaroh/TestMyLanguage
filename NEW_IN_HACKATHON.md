@@ -1,8 +1,9 @@
 # New in the hackathon
 
-Everything below was written during the Meta Global AI Developer Hackathon (Oct 27 to Nov 4, 2026).
-The pre-existing code is listed in `PRE_EXISTING.md` and is the first commit, tagged `pre-hackathon-baseline`.
-`git diff pre-hackathon-baseline..main` shows exactly what is new. Only a handful of pre-existing files were edited, and every edit is listed in `PRE_EXISTING.md`.
+TestMyLanguage is a new application, built during the Meta Global AI Developer Hackathon (Oct 27 to Nov 4, 2026), with the Meta Model API
+doing as much of the work as possible: Muse Spark writes, judges, watches and summarises, and Muse Voice Transcribe listens.
+The small amount of earlier code and content it builds on is listed in `PRE_EXISTING.md` (the first commit, tagged `pre-hackathon-baseline`).
+`git diff pre-hackathon-baseline..main` shows exactly what is new. Only a handful of earlier files were edited, and every edit is listed in `PRE_EXISTING.md`.
 
 **How it was built.** The code was written by the author with the help of an AI coding assistant (Claude Code, by Anthropic), which co-authored the commits (see the `Co-Authored-By` lines). The author directed the work, tested the live apps and reviewed and merged every pull request.
 
@@ -19,7 +20,7 @@ TestMyLanguage places a learner of Tamil or Hindi at Level 1 in about fifteen mi
 
 ## Not Meta (labelled as such in the product and the demo)
 - Browser speech synthesis: the fallback voice of the Listen buttons when the speech service is unreachable.
-- The letter-shape comparison (pre-existing, see `PRE_EXISTING.md`), which scores handwritten letters. Meta vision reading of drawings was tried and measured as unreliable; it is **not** part of any score and survives only as an optional tick-box on the admin test page (`HandwritingReader`, `HandwritingCheckView`).
+- The letter-shape comparison (earlier code, see `PRE_EXISTING.md`), which scores handwritten letters. Meta vision reading of drawings was tried and measured as unreliable; it is **not** part of any score and survives only as an optional tick-box on the admin test page (`HandwritingReader`, `HandwritingCheckView`).
 - The video clips: made outside the API in a Meta Muse chat session (Meta's Model API has no video generation); Muse Spark then watches them through the API. They are stored in Azure Blob Storage, not in this repository.
 - Development tooling: Claude Code (see above).
 
@@ -33,11 +34,8 @@ TestMyLanguage places a learner of Tamil or Hindi at Level 1 in about fifteen mi
 | `config/BlobStorageHealthIndicator` | Blob Storage health component for the readiness endpoint |
 | `application.properties` | Slimmed to the settings this app uses; no defaults for database or Google credentials |
 | `build.gradle`, `settings.gradle`, `Dockerfile` | Project renamed to TestMyLanguage; Spring Boot Actuator added for health probes; libraries for excluded features removed |
-| `.github/workflows/build-push-ghcr.yml` | Builds the app image, runs the tests, pushes to GitHub Container Registry and asks the private deploy repository to roll out |
+| `.github/workflows/build-push-ghcr.yml` | Builds the app image, runs the tests, pushes to GitHub Container Registry and triggers the rollout of the live apps |
 | `.env.example`, `README.md`, this file | Documentation |
-| `docs/DATABASE.md` | Removed: documentation lives in the author's private LanguageTool repository |
-
-Deployment manifests (Argo CD, sealed secrets, ingress) live in the private `langtool-deploy` repository; database migrations V082 to V088 live in the private `LanguageToolDBScripts` repository.
 
 ## Task 1: Meta-written proctor texts
 | Item | What it is |
@@ -50,7 +48,7 @@ Deployment manifests (Argo CD, sealed secrets, ingress) live in the private `lan
 | Item | What it is |
 | --- | --- |
 | `assessment/` (`BlockEngine`, `LevelScore`, `AssessmentService`, `AssessAttempt`, `AssessBlockResult`, `AssessAnswer` and repositories) | The block rule (4, then 4 more, 75%), the level rule, and storage of attempts, block results and every answer |
-| `AssessWord`, `AssessLetters` | **Read-only views** of tables of the author's existing content database (see `PRE_EXISTING.md`) |
+| `AssessWord`, `AssessLetters` | **Read-only views** of the word and letter content the author prepared earlier (see `PRE_EXISTING.md`) |
 | `MainLayout`, `AdminBlocksView` ("Test Blocks"), `AdminFeedback` | The menu, and the admin page that runs any one part directly and shows Correct or Wrong after each answer (students never see it) |
 | `AssessmentMediaService`, `MediaUrls`, `views/api/MediaController` | Serves word pictures, letter and word audio and clips from private Blob containers through a signed-in-only route |
 
@@ -78,7 +76,7 @@ Deployment manifests (Argo CD, sealed secrets, ingress) live in the private `lan
 | `report/` (`ReportService`, `ReportMath`, `AnswerLog`, `ReportSnapshot`, `ReportSummaryWriter`) | Completes an attempt (totals, percent, level result at 75% overall), builds the report, stores a snapshot of it, and asks Muse Spark for a short written summary from the computed numbers only |
 | `ReportView`, `HistoryView` | The student's results page and the list of past results |
 
-## Tables (created by migrations in the private `LanguageToolDBScripts` repository)
+## Tables
 `assess_proctor_text`, `assess_ai_call_log` (V082); `assess_attempt`, `assess_block_result`, `assess_answer` (V083); read grants on existing content tables (V084, V085); `assess_conversation`, `assess_conversation_objective` (V086); `assess_report` (V087); `assess_video_clip` (V088).
 
 ## Content created during the hackathon
@@ -94,7 +92,7 @@ Deployment manifests (Argo CD, sealed secrets, ingress) live in the private `lan
 | Spring Boot Actuator | `build.gradle` | Apache-2.0 |
 | PyTorch (CPU), Hugging Face Transformers, NumPy | `tts/` (speech service image only) | BSD-style, Apache-2.0, BSD-3 |
 | `facebook/mms-tts-tam`, `facebook/mms-tts-hin` model weights | downloaded when the speech image is built | **CC-BY-NC 4.0** (non-commercial) |
-The Java and front-end dependencies of the application shell (Spring Boot, Vaadin, Azure SDK, PostgreSQL driver) are pre-existing and unchanged apart from the build changes above. No new npm packages were added.
+The Java and front-end dependencies of the application shell (Spring Boot, Vaadin, Azure SDK, PostgreSQL driver) come from the earlier code and are unchanged apart from the build changes above. No new npm packages were added.
 
 ## Known gaps
 Level 1 only. The Tamil and Hindi answers in the sentence list, and the Tamil and Hindi lines written by Meta for conversations and clips, are checked by the author and still need a native speaker's read. Speech in and out is still being checked with real voices. The MMS voice licence must be reviewed before any commercial use. Meta's MMS voices are single-speaker male voices, so every conversation persona is male; adding female and age-varied voices needs a multi-speaker voice model and is planned after the hackathon.

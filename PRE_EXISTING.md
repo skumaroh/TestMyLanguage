@@ -1,12 +1,16 @@
-# Pre-existing code in this baseline
+# Earlier code and content that this app builds on
 
-This repository starts from a **scrubbed, no-history snapshot** of the author's existing LanguageTool application
-(private repository `skumaroh/LanguageTool`, commit `88e2847103df54569f15f99a055f911e78925880`). The first commit is tagged `pre-hackathon-baseline`.
-`git diff pre-hackathon-baseline..main` shows exactly the work done during the Meta Global AI Developer Hackathon.
+TestMyLanguage is a new application, written for the Meta Global AI Developer Hackathon. Before the hackathon the author had
+experimented, alone, with a few separate pieces in different places: an account and sign-in shell, a letter-shape comparison, and
+some language content (words, pictures, audio). None of it was in official production use by anyone; the author was the only person
+experimenting with it. The pieces this app reuses are listed here so that it is clear what is new and what is not.
 
-License of the pre-existing code: Unlicense (public domain), see `LICENSE.md`.
+The first commit of this repository is a clean snapshot of that earlier code, tagged `pre-hackathon-baseline`.
+`git diff pre-hackathon-baseline..main` shows exactly the work done during the hackathon.
 
-## What the baseline contains (tranche 1: accounts and email)
+License of the earlier code: Unlicense (public domain), see `LICENSE.md`.
+
+## What the first commit contains (accounts and email)
 
 | Module | Files | Purpose |
 | --- | --- | --- |
@@ -18,31 +22,31 @@ License of the pre-existing code: Unlicense (public domain), see `LICENSE.md`.
 | Storage | `AzureBlobService` | Azure Blob Storage access |
 | Build and runtime | Gradle files, `Dockerfile`, Vaadin theme, `.env.example` | Build and packaging |
 
-## Later imports (each its own commit, done before new code uses the module)
+## Later import (its own commit, made before new code uses it)
 
-| Tranche | Files | Source commit | Purpose |
-| --- | --- | --- | --- |
-| 2: letter shape comparison | `data/service/LetterShapeComparisonService`, `LocalImageShapeComparisonService`, and its unit test | `88e2847103df54569f15f99a055f911e78925880` (unchanged) | Scores how closely a drawn letter matches an admin-provided reference image of the letter, with plain Java image processing (no external service, no model). In the hackathon build it ranks a drawing against the letters of the level and is the only thing that scores handwriting; the ranking logic around it is new work. Verified byte-for-byte identical to the source commit |
+| Module | Files | Purpose |
+| --- | --- | --- |
+| Letter shape comparison | `data/service/LetterShapeComparisonService`, `LocalImageShapeComparisonService`, and its unit test (unchanged) | Scores how closely a drawn letter matches a reference image of the letter, with plain Java image processing (no external service, no model). In the hackathon build it ranks a drawing against the letters of the level and is what scores handwriting; the ranking logic around it is new work |
 
-## Edits to pre-existing files (the only ones; everything else in the baseline is untouched)
+## Edits to those files (the only ones; everything else in the first commit is untouched)
 
 | File | Change |
 | --- | --- |
-| `src/main/resources/application.properties` | Removed the default Google OAuth client id and secret, and the default production datasource URL (scrub); later slimmed to the settings this app uses and extended with the hackathon settings |
+| `src/main/resources/application.properties` | Removed the default Google OAuth client id and secret and the default datasource URL; slimmed to the settings this app uses and extended with the hackathon settings |
 | `SecurityConfig`, `LoginView` | Google sign-in only when configured; no "providers not configured" warning; routes for media and speech |
 | `AzureBlobService` | Added `containerExists` (list-only health check) |
-| `build.gradle`, `settings.gradle`, `Dockerfile` | Project renamed; Actuator added; libraries for excluded features removed (image thumbnails, MP3 encoder, circuit breaker) |
-| `.env.example`, `PRE_EXISTING.md` | Documentation |
+| `build.gradle`, `settings.gradle`, `Dockerfile` | Project renamed; Actuator added; libraries for features this app does not use removed |
+| `.env.example`, this file | Documentation |
 
-## Pre-existing data and media (not code) that the hackathon build reads
+## Content prepared earlier (data and media, not code) that the app reads
 
-The apps read content that belongs to the author's existing LanguageTool product and was **not** created during the hackathon:
-words and their pictures and audio (the existing `asset` and `letters` tables and the image and audio containers in Azure Blob Storage), the reference letter images (`writing_letter`, letter-reference container), and the author's recordings of letters. They are read only (the apps hold read-only database and storage rights) and are not part of this repository, except the logo image, which is in the baseline.
+The app reads language content that the author prepared before the hackathon: words with their pictures and audio (the `asset` and
+`letters` tables and the image and audio containers in Azure Blob Storage), reference letter images (`writing_letter` and the
+letter-reference container), and the author's own recordings of letters. The app only reads this content (it holds read-only
+database and storage rights). It is not part of this repository, except the logo image.
 
-## Not in the baseline
+## Written new during the hackathon
 
-The handwriting canvas and judge, the voice recorder, the persona and conversation code, the word, translation and video parts, the
-admin and report views and the speech service were **all written new during the hackathon**; see `NEW_IN_HACKATHON.md`. Azure OpenAI and
-Azure Speech services from the author's product are not used in the hackathon build at all. Any other existing module that the build
-reuses is imported as its own commit, titled "Import pre-existing <module>", listed above with its source commit, and done before new
-code touches it.
+Everything else: the handwriting canvas and judge, the voice recorder, the persona and conversation code, the word, listening,
+translation and video parts, the admin and report views, the Meta Model API integration and the speech service. See
+`NEW_IN_HACKATHON.md`.

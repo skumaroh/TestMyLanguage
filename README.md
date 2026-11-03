@@ -1,12 +1,13 @@
 # TestMyLanguage
 
-AI-guided Tamil and Hindi placement assessments, built for the Meta Global AI Developer Hackathon.
+AI-guided Tamil and Hindi placement assessments, a new application built for the Meta Global AI Developer Hackathon with the
+Meta Model API (Muse Spark and Muse Voice Transcribe) doing as much of the work as possible.
 
 One Spring Boot and Vaadin codebase, deployed twice (`test-my-tamil.mylangskills.com` and `test-my-hindi.mylangskills.com`),
 with username and password sign-up, email verification, PostgreSQL and Azure Blob Storage.
 
-**Status:** step 1 (skeleton and deployment path). See `NEW_IN_HACKATHON.md` for what is new and `PRE_EXISTING.md` for what
-this repository started from.
+**Status:** all six parts of the Level 1 assessment, the final report and the admin tools are built. See `NEW_IN_HACKATHON.md`
+for what is new and `PRE_EXISTING.md` for the small amount of earlier code and content it builds on.
 
 ## Run locally
 
@@ -27,4 +28,4 @@ repository.
 
 ## License
 
-The pre-existing code is released under the Unlicense (see `LICENSE.md`).
+The earlier code is released under the Unlicense (see `LICENSE.md`).
