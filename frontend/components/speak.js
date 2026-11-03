@@ -54,5 +54,47 @@ function attach(button, text, tag, audioUrl) {
   });
 }
 
-window.tmlSpeak = { attach };
-export { attach };
+// Speaks a short text (for example a word tile) when the element is clicked, without touching the element's own label. Meta's MMS voice
+// first (when an audio address is given), the browser's voice as the fallback, and silence if neither works. The click is handled here
+// in the browser so playback starts inside the click.
+function speakOn(element, text, tag, audioUrl) {
+  if (element.__speakOnAttached) return;
+  element.__speakOnAttached = true;
+  const synth = window.speechSynthesis;
+  if (synth) synth.getVoices();
+  let audio = null;
+  if (audioUrl) {
+    audio = new Audio();
+    audio.preload = 'none'; // fetched on the first tap, so a screen full of tiles does not ask the speech service for every word
+    audio.src = audioUrl;
+  }
+  const browserVoice = () => {
+    if (!synth) return;
+    const lang = tag.toLowerCase();
+    const base = lang.split('-')[0];
+    const voices = synth.getVoices();
+    const voice = voices.find((v) => v.lang.toLowerCase().replace('_', '-') === lang)
+      || voices.find((v) => v.lang.toLowerCase().replace('_', '-').startsWith(base));
+    if (!voice) return;
+    synth.cancel();
+    synth.resume();
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = tag;
+    utterance.voice = voice;
+    synth.speak(utterance);
+  };
+  element.addEventListener('click', () => {
+    if (synth) synth.cancel();
+    if (!audio) { browserVoice(); return; }
+    document.querySelectorAll('audio').forEach((a) => a.pause());
+    if (window.__tmlPlaying && window.__tmlPlaying !== audio) window.__tmlPlaying.pause();
+    window.__tmlPlaying = audio;
+    audio.currentTime = 0;
+    const started = audio.play();
+    if (started && started.catch) started.catch(() => browserVoice());
+    audio.onerror = () => browserVoice();
+  });
+}
+
+window.tmlSpeak = { attach, speakOn };
+export { attach, speakOn };
