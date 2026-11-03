@@ -141,4 +141,23 @@ class ConversationTurnGraderTest {
         assertTrue(PersonaProfiles.builtIn("காய்கறி கடை").contains("vegetable seller"));
         assertTrue(PersonaProfiles.builtIn("A friendly milk vendor").contains("milk vendor"));
     }
+
+    @Test
+    void voiceTraitsComeFromTheProfileOrTheAge() {
+        Conversation granny = new Conversation("tamil", 1, "META", "Visiting grandmother", "பாட்டி");
+        granny.setPersonaDescription("{\"about\":\"A warm grandmother\",\"gender\":\"female\",\"age_band\":\"old\"}");
+        assertEquals(new PersonaVoice("FEMALE", "OLD"), PersonaVoice.of(granny));
+        assertTrue(PersonaProfiles.describe(granny).contains("A warm grandmother"));
+        Conversation milk = new Conversation("tamil", 1, "META", "Buying milk", "முருகன்");
+        milk.setPersonaDescription("A milk vendor");
+        assertEquals(new PersonaVoice("MALE", "ADULT"), PersonaVoice.of(milk));
+        Conversation plain = new Conversation("tamil", 1, "META", "Visiting a tailor", "ரவி");
+        plain.setPersonaDescription("A tailor");
+        assertEquals(new PersonaVoice("UNKNOWN", "ADULT"), PersonaVoice.of(plain));
+        // the admin's own JSON wins over the built-in profile while the built-in facts stay
+        Conversation young = new Conversation("tamil", 1, "META", "Buying milk", "மீனா");
+        young.setPersonaDescription("{\"gender\":\"female\",\"age\":22}");
+        assertEquals(new PersonaVoice("FEMALE", "YOUNG"), PersonaVoice.of(young));
+        assertTrue(PersonaProfiles.describe(young).contains("60 rupees a litre"));
+    }
 }

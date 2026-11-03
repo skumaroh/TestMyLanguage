@@ -82,4 +82,15 @@ class ConversationGeneratorTest {
         assertTrue(task.contains("<<<EXISTING\nBuying vegetables\nEXISTING>>>"));
         assertFalse(ConversationGenerator.task("hindi", 1, "x", List.of()).contains("EXISTING"));
     }
+
+    @Test
+    void voiceTraitsFromTheModelAreStoredInTheDescriptionAndBadOnesAreDropped() throws Exception {
+        ConversationGenerator g = new ConversationGenerator(r -> null);
+        com.fasterxml.jackson.databind.ObjectMapper m = new com.fasterxml.jackson.databind.ObjectMapper();
+        String ok = g.personaDescription(m.readTree("{\"persona_description\":\"A grandmother\",\"persona_gender\":\"FEMALE\","
+                + "\"persona_age_band\":\"OLD\"}"));
+        assertTrue(ok.contains("\"gender\":\"female\"") && ok.contains("\"age_band\":\"old\"") && ok.contains("A grandmother"));
+        assertEquals("A grandmother", g.personaDescription(m.readTree("{\"persona_description\":\"A grandmother\","
+                + "\"persona_gender\":\"ROBOT\",\"persona_age_band\":\"OLD\"}")));
+    }
 }
