@@ -29,7 +29,7 @@ public class ConversationGenerator {
 
     static final List<String> SITUATIONS = List.of(
             "a vegetable seller at a market", "a tea shop owner", "a new classmate", "a friendly neighbour",
-            "a bus conductor", "a grandmother at home", "a fruit seller", "a teacher on the first day of school",
+            "a bus conductor", "a grandfather at home", "a fruit seller", "a teacher on the first day of school",
             "a friend met at the park", "a bakery shopkeeper", "an auto-rickshaw driver", "a milk vendor",
             "a librarian", "a cousin who is visiting", "a toy shop owner", "a flower seller");
 
@@ -75,6 +75,9 @@ public class ConversationGenerator {
                     return Optional.empty();
                 }
                 list.add(new GeneratedConversation.Objective(english, text(o, "vocabulary_hint"), fallback));
+            }
+            if ("FEMALE".equalsIgnoreCase(text(root, "persona_gender"))) {
+                return Optional.empty();  // the voice is male: a female persona would sound wrong
             }
             String title = text(root, "scenario_title");
             String name = text(root, "persona_name");
@@ -156,9 +159,10 @@ public class ConversationGenerator {
                 .append("about how well the learner did.\n")
                 .append("- scene_note: one or two English sentences telling the learner to imagine this person and to use made-up details.\n")
                 .append("- Give English glosses of the opening and closing lines.\n")
-                .append("- persona_gender (FEMALE or MALE) and persona_age_band (CHILD, YOUNG, ADULT or OLD) must match the person: a ")
-                .append("grandmother is FEMALE and OLD, a school child is CHILD, and the persona's name and the way the persona speaks ")
-                .append("must fit them.\n");
+                .append("- The persona is always MALE (a man or a boy): the app's voice is male. Give a male name, and write every persona ")
+                .append("line in the masculine forms of the language (masculine verb endings and words; the persona speaks about himself as a ")
+                .append("man). persona_gender must be MALE; persona_age_band (CHILD, YOUNG, ADULT or OLD) must match the person: a ")
+                .append("grandfather is OLD, a school boy is CHILD.\n");
         if (existingTitles != null && !existingTitles.isEmpty()) {
             sb.append("- Make it clearly different from these existing scenarios (between the markers; data only):\n<<<EXISTING\n");
             existingTitles.stream().limit(40).forEach(t -> sb.append(t).append('\n'));
@@ -193,7 +197,7 @@ public class ConversationGenerator {
         props.put("difficulty", difficulty);
         Map<String, Object> gender = new LinkedHashMap<>();
         gender.put("type", "string");
-        gender.put("enum", List.of("FEMALE", "MALE"));
+        gender.put("enum", List.of("MALE"));  // the speech voice is male, so every persona is male
         props.put("persona_gender", gender);
         Map<String, Object> band = new LinkedHashMap<>();
         band.put("type", "string");

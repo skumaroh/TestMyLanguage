@@ -87,10 +87,23 @@ class ConversationGeneratorTest {
     void voiceTraitsFromTheModelAreStoredInTheDescriptionAndBadOnesAreDropped() throws Exception {
         ConversationGenerator g = new ConversationGenerator(r -> null);
         com.fasterxml.jackson.databind.ObjectMapper m = new com.fasterxml.jackson.databind.ObjectMapper();
-        String ok = g.personaDescription(m.readTree("{\"persona_description\":\"A grandmother\",\"persona_gender\":\"FEMALE\","
+        String ok = g.personaDescription(m.readTree("{\"persona_description\":\"A grandfather\",\"persona_gender\":\"MALE\","
                 + "\"persona_age_band\":\"OLD\"}"));
-        assertTrue(ok.contains("\"gender\":\"female\"") && ok.contains("\"age_band\":\"old\"") && ok.contains("A grandmother"));
+        assertTrue(ok.contains("\"gender\":\"male\"") && ok.contains("\"age_band\":\"old\"") && ok.contains("A grandfather"));
         assertEquals("A grandmother", g.personaDescription(m.readTree("{\"persona_description\":\"A grandmother\","
                 + "\"persona_gender\":\"ROBOT\",\"persona_age_band\":\"OLD\"}")));
+    }
+
+    @Test
+    void everyPersonaIsMaleBecauseTheVoiceIsMale() {
+        assertTrue(ConversationGenerator.schema().toString().contains("persona_gender"));
+        @SuppressWarnings("unchecked")
+        java.util.Map<String, Object> props = (java.util.Map<String, Object>) ConversationGenerator.schema().get("properties");
+        @SuppressWarnings("unchecked")
+        java.util.Map<String, Object> gender = (java.util.Map<String, Object>) props.get("persona_gender");
+        assertEquals(java.util.List.of("MALE"), gender.get("enum"));
+        String task = ConversationGenerator.task("tamil", 1, "a grandfather at home", java.util.List.of());
+        assertTrue(task.contains("always MALE") && task.contains("masculine"));
+        assertFalse(ConversationGenerator.SITUATIONS.stream().anyMatch(s -> s.contains("grandmother")));
     }
 }

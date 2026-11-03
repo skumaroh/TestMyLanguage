@@ -170,4 +170,13 @@ class ConversationTurnGraderTest {
         assertTrue(new PersonaVoice("FEMALE", "ADULT").style().pitch() > new PersonaVoice("MALE", "OLD").style().pitch());
         assertEquals(com.infotech.lang.application.ai.VoiceStyle.BASE, new PersonaVoice("ROBOT", "OLD").style());
     }
+
+    @Test
+    void thePersonaSpeaksAsAManAndTheVegetableSellerIsMale() {
+        String task = ConversationTurnGrader.task("hindi", conversation(), objective(1, "Greet"), List.of(), "x", List.of(), "y");
+        assertTrue(task.contains("imaginary man") && task.contains("masculine"));
+        Conversation veg = new Conversation("tamil", 1, "META", "Buying vegetables", "ரவி");
+        veg.setPersonaDescription("A seller");
+        assertEquals("MALE", PersonaVoice.of(veg).gender());
+    }
 }

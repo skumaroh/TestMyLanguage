@@ -70,12 +70,16 @@ public class ConversationAdminView extends VerticalLayout {
         add(new H2("Conversations (" + language + ")"));
         add(new Paragraph("Meta writes imagined everyday conversations as drafts. Read each one, fix anything odd in the "
                 + language + " lines, and verify it. Only verified conversations are used in a test; a learner never gets "
-                + "the same conversation twice. Retired conversations are kept but never used."));
+                + "the same conversation twice. Retired conversations are kept but never used. Every persona must be male, because the voice is male: "
+                + "retire any conversation with a female persona (such as a grandmother) and write new drafts."));
 
         grid.addColumn(Conversation::getId).setHeader("ID").setAutoWidth(true);
         grid.addColumn(Conversation::getStatus).setHeader("Status").setAutoWidth(true);
         grid.addColumn(Conversation::getScenarioTitle).setHeader("Scenario").setAutoWidth(true).setFlexGrow(1);
         grid.addColumn(Conversation::getPersonaName).setHeader("Persona").setAutoWidth(true);
+        // the speech voice is male, so a persona set to female (or a female-looking one) must be retired or rewritten
+        grid.addColumn(c -> "FEMALE".equals(PersonaVoice.of(c).gender()) ? "⚠ female: retire" : PersonaVoice.of(c).describe())
+                .setHeader("Voice").setAutoWidth(true);
         grid.addColumn(Conversation::getLevel).setHeader("Level").setAutoWidth(true);
         grid.addColumn(Conversation::getDifficulty).setHeader("Difficulty").setAutoWidth(true);
         grid.addColumn(Conversation::getSource).setHeader("Source").setAutoWidth(true);
