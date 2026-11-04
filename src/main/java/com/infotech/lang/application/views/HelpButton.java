@@ -48,6 +48,11 @@ final class HelpButton {
 
     /** The help link whose popup is a few plain paragraphs. */
     static Button text(String title, String... paragraphs) {
+        return text(title, null, paragraphs);
+    }
+
+    /** As {@link #text(String, String...)}, with the module's sample screenshot (when there is one) under the paragraphs. */
+    static Button text(String title, Modules module, String... paragraphs) {
         return link(title, () -> {
             com.vaadin.flow.component.html.Div body = new com.vaadin.flow.component.html.Div();
             SpeechRegistry registry = registry();
@@ -62,6 +67,10 @@ final class HelpButton {
                 } else {
                     body.add(text);
                 }
+            }
+            Component sample = module == null ? null : HelpImages.forModule(module);
+            if (sample != null) {
+                body.add(sample);
             }
             return body;
         });
@@ -91,7 +100,7 @@ final class HelpButton {
     static HorizontalLayout heading(Modules module, String... instructions) {
         H2 title = new H2(module.heading());
         title.getStyle().set("margin", "0");
-        HorizontalLayout row = new HorizontalLayout(title, text("How this module works", instructions));
+        HorizontalLayout row = new HorizontalLayout(title, text("How this module works", module, instructions));
         row.setAlignItems(FlexComponent.Alignment.CENTER);
         row.setWrap(true);
         return row;

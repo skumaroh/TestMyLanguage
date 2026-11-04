@@ -56,6 +56,7 @@ public class WelcomeIntro extends VerticalLayout {
                 + "The Listen buttons play Meta's open-source MMS voice (your device's own voice if that is not available).");
         note.getStyle().set("color", "var(--lumo-secondary-text-color)").set("font-size", "var(--lumo-font-size-s)");
         add(note);
+        add(new H3("What each module looks like"), HelpImages.gallery());
     }
 
     private Div card(String heading, ProctorSlot slot, String name) {
