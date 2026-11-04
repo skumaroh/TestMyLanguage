@@ -3,11 +3,13 @@ package com.infotech.lang.application.views;
 import com.infotech.lang.application.assessment.ModuleProgressService;
 import com.infotech.lang.application.assessment.Modules;
 import com.infotech.lang.application.config.LanguageContext;
+import com.infotech.lang.application.guest.GuestAccount;
 import com.infotech.lang.application.data.entity.User;
 import com.infotech.lang.application.data.repository.UserRepository;
 import com.infotech.lang.application.proctor.ProctorTextService;
 import com.infotech.lang.application.proctor.ProctorWarmUp;
 import com.infotech.lang.application.report.ReportService;
+import com.infotech.lang.application.voice.SpeechRegistry;
 import com.infotech.lang.application.video.VideoPicker;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.html.Anchor;
@@ -55,6 +57,7 @@ public class HomeView extends VerticalLayout {
                     ReportService reportService,
                     ProctorTextService proctorTexts,
                     ProctorWarmUp proctorWarmUp,
+                    SpeechRegistry speechRegistry,
                     @Value("${proctor.level:1}") int level,
                     @Value("${assessment.blob-check.container:}") String blobContainer,
                     @Value("${assessment.blob-check.blob:}") String blobName) {
@@ -73,7 +76,12 @@ public class HomeView extends VerticalLayout {
         ModuleProgressService.Progress progress = userId == null ? new ModuleProgressService.Progress(null, Set.of(), false)
                 : moduleProgress.of(userId);
         boolean returning = progress.hasCompletedBefore() || !progress.finished().isEmpty();
-        add(new Paragraph(greeting(name, returning)));
+        if (GuestAccount.isGuestNow()) {
+            add(new Paragraph("You're trying a sample of the assessment (about two minutes). "
+                    + "Sign in any time for the full assessment, your own report and a certificate."));
+        } else {
+            add(new Paragraph(greeting(name, returning)));
+        }
 
         boolean videoAvailable = false;
         try {
@@ -100,28 +108,9 @@ public class HomeView extends VerticalLayout {
             start.add(results);
         }
         start.add(HelpButton.link("Welcome and activity introductions",
-                () -> new WelcomeIntro(securityService, userRepository, proctorTexts, proctorWarmUp, level)));
+                () -> new WelcomeIntro(securityService, userRepository, proctorTexts, proctorWarmUp, speechRegistry, level)));
         add(start);
 
-        add(new H3("Modules"));
-        VerticalLayout list = new VerticalLayout();
-        list.setPadding(false);
-        list.setSpacing(false);
-        for (Modules module : Modules.taken(videoAvailable)) {
-            boolean done = progress.finished().contains(module.code());
-            if (done) {
-                Span finished = new Span("✓ " + module.heading());
-                finished.getStyle().set("color", "var(--lumo-success-text-color)");
-                list.add(finished);
-            } else if (next.isPresent() && next.get() == module) {
-                list.add(link(module.heading(), module.route()));
-            } else {
-                Span later = new Span(module.heading());
-                later.getStyle().set("color", "var(--lumo-disabled-text-color)");
-                list.add(later);
-            }
-        }
-        add(list);
         if (progress.hasCompletedBefore()) {
             add(new RouterLink("My results", HistoryView.class));
         }
@@ -136,8 +125,10 @@ public class HomeView extends VerticalLayout {
             add(new RouterLink("Admin: translation check (Meta grades meaning)", TranslationCheckView.class));
         }
 
-        Button logout = new Button("Sign out", e -> securityService.logout());
-        add(logout);
+        if (!GuestAccount.isGuestNow()) {
+            Button logout = new Button("Sign out", e -> securityService.logout());
+            add(logout);
+        }
     }
 
     /** "Welcome back, Priya" for someone who has been here before; plain "Welcome" otherwise (and without a name). */

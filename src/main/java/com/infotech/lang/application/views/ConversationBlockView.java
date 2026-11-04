@@ -4,6 +4,8 @@ import com.infotech.lang.application.ai.SpeechToText;
 import com.infotech.lang.application.assessment.AssessBlockResult;
 import com.infotech.lang.application.assessment.AssessmentService;
 import com.infotech.lang.application.assessment.Modules;
+import com.infotech.lang.application.guest.GuestAccount;
+import com.infotech.lang.application.guest.GuestMode;
 import com.infotech.lang.application.assessment.BlockEngine;
 import com.infotech.lang.application.config.LanguageContext;
 import com.infotech.lang.application.conversation.Conversation;
@@ -16,6 +18,7 @@ import com.infotech.lang.application.report.ReportService;
 import com.infotech.lang.application.security.SecurityService;
 import com.infotech.lang.application.translation.SpellingSuggester;
 import com.infotech.lang.application.video.VideoPicker;
+import com.infotech.lang.application.voice.AudioConversation;
 import com.infotech.lang.application.voice.SpeechRegistry;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
@@ -61,7 +64,7 @@ public class ConversationBlockView extends VerticalLayout implements BeforeEnter
     private final AssessmentService assessment;
     private final ConversationTurnGrader grader;
     private final String language;
-    private final BlockEngine engine = new BlockEngine();
+    private final BlockEngine engine = GuestMode.engine();
     private final SpellingSuggester speller;
     private final SpeechToText speech;
     private final SecurityService securityService;
@@ -88,6 +91,11 @@ public class ConversationBlockView extends VerticalLayout implements BeforeEnter
     private IdleGuard guard;
     private Button send;
     private Paragraph glossLine;
+    /** Full audio conversation: allowed for this person (setting: off, admin, on), the panel, and whether it is running now. */
+    private final boolean voiceAllowed;
+    private AudioConversation audio;
+    private boolean talking;
+    private String wrapUpSpoken = "";
 
     public ConversationBlockView(SecurityService securityService,
                                  UserRepository userRepository,
@@ -99,7 +107,9 @@ public class ConversationBlockView extends VerticalLayout implements BeforeEnter
                                  SpeechRegistry speechRegistry,
                                  ReportService reportService,
                                  VideoPicker videoPicker,
-                                 LanguageContext languageContext) {
+                                 LanguageContext languageContext,
+                                 @org.springframework.beans.factory.annotation.Value("${conversation.voice:admin}") String voiceMode) {
+        this.voiceAllowed = "on".equalsIgnoreCase(voiceMode) || ("admin".equalsIgnoreCase(voiceMode) && MainLayout.isAdmin());
         this.assessment = assessment;
         this.grader = grader;
         this.speller = speller;
@@ -173,6 +183,26 @@ public class ConversationBlockView extends VerticalLayout implements BeforeEnter
                 : c.getSceneNote());
         note.getStyle().set("font-weight", "600");
         add(note);
+        if (voiceAllowed && speechRegistry.isEnabled()) {
+            audio = new AudioConversation(speech, language, c.getPersonaName(), urlFor(c.getIntroLine()),
+                    () -> {
+                        talking = true;
+                        controls.setVisible(false);
+                        guard.stop();
+                    },
+                    heard -> {
+                        answerBox.acceptSpoken(heard);
+                        submit();
+                    },
+                    () -> {
+                        talking = false;
+                        controls.setVisible(true);
+                        if (!finished) {
+                            guard.start();
+                        }
+                    });
+            add(audio);
+        }
         transcript = new Div();
         transcript.setWidthFull();
         add(transcript);
@@ -209,6 +239,16 @@ public class ConversationBlockView extends VerticalLayout implements BeforeEnter
         });
         gloss.addThemeVariants(ButtonVariant.LUMO_TERTIARY, ButtonVariant.LUMO_SMALL);
         transcript.add(new Div(gloss, glossLine));
+        if (talking && audio != null && !finished) {
+            audio.say(urlFor(line));
+        }
+    }
+
+    /** The address the browser plays a line from (Meta's MMS voice); the line is looked up by a short key, never put in the address. */
+    private String urlFor(String line) {
+        String text = nz(line);
+        return "/api/tts/" + speechRegistry.register(language, text.length() > 380 ? text.substring(0, 380) : text,
+                com.infotech.lang.application.ai.VoiceStyle.BASE);
     }
 
     /** One line of the conversation with a Listen button; {@code spoken} is what is read aloud (without the persona's name). */
@@ -262,7 +302,7 @@ public class ConversationBlockView extends VerticalLayout implements BeforeEnter
                     + " | ASKED: " + asked + (reply.isBlank() ? "" : " | NEXT: " + reply);
             int duration = (int) Math.min(Integer.MAX_VALUE, System.currentTimeMillis() - shownAtMillis);
             assessment.recordAnswer(block.getId(), index + 1, itemRef(index + 1), log, turn.met(), duration);
-            AdminFeedback.show(turn.met(), turn.verdict() + (turn.reason().isBlank() ? "" : " (" + turn.reason() + ")")
+            AnswerFeedback.show(turn.met(), turn.verdict() + (turn.reason().isBlank() ? "" : " (" + turn.reason() + ")")
                     + (turn.hasSpellingNote() ? " – spelling: " + turn.spelling() + " → " + turn.corrected() : ""));
             engine.record(turn.met());
             history.add(new ConversationTurnGrader.Line(false, given));
@@ -271,6 +311,7 @@ public class ConversationBlockView extends VerticalLayout implements BeforeEnter
                 // every goal was reached: show the persona's wrap-up, credit the turns that are left, and close
                 history.add(new ConversationTurnGrader.Line(true, turn.reply()));
                 transcript.add(bubble(c0().getPersonaName() + ": " + turn.reply(), turn.reply(), true));
+                wrapUpSpoken = turn.reply();
                 while (!engine.isComplete()) {
                     assessment.recordAnswer(block.getId(), engine.asked() + 1, itemRef(engine.asked() + 1),
                             "[COVERED: all goals reached earlier]", true, 0);
@@ -284,12 +325,16 @@ public class ConversationBlockView extends VerticalLayout implements BeforeEnter
                 showPersona(reply, turn.replyEnglish());
                 answerBox.clear();
                 send.setEnabled(true);
-                guard.start();
+                if (!talking) {
+                    guard.start();
+                }
             }
         } catch (RuntimeException e) {
             logger.error("Could not grade or save the answer", e);
             send.setEnabled(true);
-            guard.start();
+            if (!talking) {
+                guard.start();
+            }
             Notification.show("Sorry, that answer could not be saved. Please try again.");
         }
     }
@@ -328,6 +373,12 @@ public class ConversationBlockView extends VerticalLayout implements BeforeEnter
         remove(controls);
         Conversation c = picked.conversation();
         transcript.add(bubble(c.getPersonaName() + ": " + c.getClosingLine(), c.getClosingLine(), true));
+        if (talking && audio != null) {
+            String last = (wrapUpSpoken.isBlank() ? "" : wrapUpSpoken + " ") + nz(c.getClosingLine());
+            audio.sayLast(urlFor(last));
+        } else if (audio != null) {
+            remove(audio);
+        }
         add(new H2("Module 5 complete"));
         add(new Paragraph("Thank you. Your answers are saved. Your results will be shown at the end of the assessment."));
         Long attemptId = block.getAttemptId();
@@ -342,7 +393,11 @@ public class ConversationBlockView extends VerticalLayout implements BeforeEnter
             add(new Paragraph("Next: " + Modules.VIDEO.heading()));
             add(new Button("Continue to Module 6", e -> getUI().ifPresent(ui -> ui.navigate(Modules.VIDEO.route()))));
         }
-        if (!videoNext || MainLayout.isAdmin()) {
+        if (GuestAccount.isGuestNow()) {
+            if (!videoNext) {
+                add(new Button("See your quick summary", e -> getUI().ifPresent(ui -> ui.navigate("assessment/guest-summary"))));
+            }
+        } else if (!videoNext || MainLayout.isAdmin()) {
             try {
                 reportService.complete(attemptId);
                 add(new Button(videoNext ? "Finish here and see the results (admin)" : "See your results",

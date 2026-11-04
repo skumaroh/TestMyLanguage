@@ -12,12 +12,18 @@ public class AssessmentService {
     private final AssessAttemptRepository attempts;
     private final AssessBlockResultRepository blocks;
     private final AssessAnswerRepository answers;
+    private final com.infotech.lang.application.data.repository.UserRepository users;
+    private final com.infotech.lang.application.guest.GuestService guests;
 
     public AssessmentService(AssessAttemptRepository attempts, AssessBlockResultRepository blocks,
-                             AssessAnswerRepository answers) {
+                             AssessAnswerRepository answers,
+                             com.infotech.lang.application.data.repository.UserRepository users,
+                             com.infotech.lang.application.guest.GuestService guests) {
         this.attempts = attempts;
         this.blocks = blocks;
         this.answers = answers;
+        this.users = users;
+        this.guests = guests;
     }
 
     /** Starts a new attempt; an earlier unfinished attempt of the student is marked INCOMPLETE (no resume). */
@@ -65,6 +71,24 @@ public class AssessmentService {
         block.setPassed(passed);
         block.setFinishedAt(OffsetDateTime.now());
         blocks.save(block);
+        guestModuleDone(block);
+    }
+
+    /** For a guest only: one anonymous statistics row saying which module was finished. Never throws. */
+    private void guestModuleDone(AssessBlockResult block) {
+        try {
+            AssessAttempt attempt = attempts.findById(block.getAttemptId()).orElse(null);
+            if (attempt == null) {
+                return;
+            }
+            users.findById(attempt.getUserId()).ifPresent(u -> {
+                if (com.infotech.lang.application.guest.GuestAccount.isGuestEmail(u.getEmail())) {
+                    guests.event(attempt.getLanguage(), com.infotech.lang.application.guest.GuestService.MODULE_DONE, block.getBlockCode());
+                }
+            });
+        } catch (RuntimeException e) {
+            // statistics must never break an assessment
+        }
     }
 
     /** The student's attempt in progress (started by the first block), or a new one if there is none. */

@@ -4,6 +4,7 @@ import com.infotech.lang.application.ai.SpeechToText;
 import com.infotech.lang.application.assessment.AssessBlockResult;
 import com.infotech.lang.application.assessment.AssessmentService;
 import com.infotech.lang.application.assessment.Modules;
+import com.infotech.lang.application.guest.GuestMode;
 import com.infotech.lang.application.assessment.BlockEngine;
 import com.infotech.lang.application.config.LanguageContext;
 import com.infotech.lang.application.data.entity.User;
@@ -68,7 +69,7 @@ public class TranslationBlockView extends VerticalLayout {
     private final AssessmentService assessment;
     private final TranslationGrader grader;
     private final String language;
-    private final BlockEngine engine = new BlockEngine();
+    private final BlockEngine engine = GuestMode.engine();
 
     private final SentencePicker picker;
     private final SpellingSuggester speller;
@@ -400,7 +401,7 @@ public class TranslationBlockView extends VerticalLayout {
             String log = (graderFailed ? "FLAG grader unavailable: " : "") + mode + given + " [" + grade.verdict() + "]" + spellingNote;
             int duration = (int) Math.min(Integer.MAX_VALUE, System.currentTimeMillis() - shownAtMillis);
             assessment.recordAnswer(block.getId(), engine.asked() + 1, "sentence:" + current.id(), log, grade.correct(), duration);
-            AdminFeedback.show(grade.correct(), mode + grade.verdict()
+            AnswerFeedback.show(grade.correct(), mode + grade.verdict()
                     + (grade.usedModel() ? " (Meta: " + grade.reason() + ")" : " (exact match)")
                     + (grade.hasSpellingNote() ? " – spelling: " + grade.spelling() + " → " + grade.corrected() : ""));
             engine.record(grade.correct());

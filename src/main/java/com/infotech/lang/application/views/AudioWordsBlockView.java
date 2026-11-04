@@ -4,6 +4,7 @@ import com.infotech.lang.application.assessment.AssessBlockResult;
 import com.infotech.lang.application.assessment.AssessmentMediaService;
 import com.infotech.lang.application.assessment.AssessmentService;
 import com.infotech.lang.application.assessment.Modules;
+import com.infotech.lang.application.guest.GuestMode;
 import com.infotech.lang.application.assessment.BlockEngine;
 import com.infotech.lang.application.assessment.MediaUrls;
 import com.infotech.lang.application.assessment.WordQuestion;
@@ -47,7 +48,7 @@ public class AudioWordsBlockView extends VerticalLayout {
     private final AssessmentService assessment;
     private final AssessmentMediaService media;
     private final String language;
-    private final BlockEngine engine = new BlockEngine();
+    private final BlockEngine engine = GuestMode.engine();
     private final StringBuilder built = new StringBuilder();
 
     private List<WordQuestion> questions = List.of();
@@ -154,7 +155,7 @@ public class AudioWordsBlockView extends VerticalLayout {
             boolean correct = WordQuestionService.isCorrect(given, current.answer());
             int duration = (int) Math.min(Integer.MAX_VALUE, System.currentTimeMillis() - shownAtMillis);
             assessment.recordAnswer(block.getId(), engine.asked() + 1, "asset:" + current.id(), given, correct, duration);
-            AdminFeedback.show(correct, correct ? "" : "expected " + current.answer());
+            AnswerFeedback.show(correct, correct ? "" : "expected " + current.answer());
             engine.record(correct);
             if (engine.isComplete()) {
                 assessment.finishBlock(block.getId(), engine.asked(), engine.correct(), engine.passed());

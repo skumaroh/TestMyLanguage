@@ -51,7 +51,7 @@ TestMyLanguage places a learner of Tamil or Hindi at Level 1 in about fifteen mi
 | --- | --- |
 | `assessment/` (`BlockEngine`, `LevelScore`, `AssessmentService`, `AssessAttempt`, `AssessBlockResult`, `AssessAnswer` and repositories) | The block rule (4, then 4 more, 75%), the level rule, and storage of attempts, block results and every answer |
 | `AssessWord`, `AssessLetters` | **Read-only views** of the word and letter content the author prepared earlier (see `PRE_EXISTING.md`) |
-| `MainLayout`, `AdminBlocksView` ("Test Blocks"), `AdminFeedback` | The menu, and the admin page that runs any one part directly and shows Correct or Wrong after each answer (students never see it) |
+| `MainLayout`, `AdminBlocksView` ("Test Blocks"), `AnswerFeedback` | The menu, and the admin page that runs any one part directly. After each answer everyone sees Correct or Wrong for 1.5 seconds; admins also see the detail behind it |
 | `AssessmentMediaService`, `MediaUrls`, `views/api/MediaController` | Serves word pictures, letter and word audio and clips from private Blob containers through a signed-in-only route |
 
 ## The six parts
@@ -95,6 +95,7 @@ TestMyLanguage places a learner of Tamil or Hindi at Level 1 in about fifteen mi
 | jsPDF, html2canvas (npm; make the certificate PDF in the browser) | `CertificateView`, `certificate-pdf.js` | MIT, MIT |
 | qrcode-generator (npm; draws the QR code on the certificate) | `CertificateView`, `certificate-qr.js` | MIT |
 | TwelveMonkeys imageio-webp (Java; reads the WebP pictures Meta's image model returns) | `ImageResizer` | BSD-3-Clause |
+| H2 database (Java; tests only, for the start-up check; not in the application) | `ApplicationStartsTest` | EPL-1.0 / MPL-2.0 |
 | PyTorch (CPU), Hugging Face Transformers, NumPy | `tts/` (speech service image only) | BSD-style, Apache-2.0, BSD-3 |
 | `facebook/mms-tts-tam`, `facebook/mms-tts-hin` model weights | downloaded when the speech image is built | **CC-BY-NC 4.0** (non-commercial) |
 The Java and front-end dependencies of the application shell (Spring Boot, Vaadin, Azure SDK, PostgreSQL driver) come from the earlier code and are unchanged apart from the build changes above. The only new npm packages are jsPDF, html2canvas and qrcode-generator, and the only new Java library is imageio-webp, listed above.

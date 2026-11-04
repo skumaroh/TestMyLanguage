@@ -75,6 +75,8 @@ dependencies {
         exclude group: 'org.hamcrest', module: 'hamcrest-core'
     }
     testImplementation 'io.github.bonigarcia:webdrivermanager:3.8.1'
+    // In-memory database for the start-up check (tests only; never in the application)
+    testRuntimeOnly 'com.h2database:h2'
 }
 
 dependencyManagement {

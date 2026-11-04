@@ -5,6 +5,8 @@ import com.infotech.lang.application.assessment.AssessBlockResult;
 import com.infotech.lang.application.assessment.AssessmentMediaService;
 import com.infotech.lang.application.assessment.AssessmentService;
 import com.infotech.lang.application.assessment.Modules;
+import com.infotech.lang.application.guest.GuestAccount;
+import com.infotech.lang.application.guest.GuestMode;
 import com.infotech.lang.application.assessment.BlockEngine;
 import com.infotech.lang.application.assessment.MediaUrls;
 import com.infotech.lang.application.config.LanguageContext;
@@ -65,7 +67,7 @@ public class VideoBlockView extends VerticalLayout implements BeforeEnterObserve
     private final SecurityService securityService;
     private final UserRepository userRepository;
     private final String language;
-    private final BlockEngine engine = new BlockEngine();
+    private final BlockEngine engine = GuestMode.engine();
 
     private List<VideoClip> clips = List.of();
     private AssessBlockResult block;
@@ -108,7 +110,7 @@ public class VideoBlockView extends VerticalLayout implements BeforeEnterObserve
             adminTest = MainLayout.isAdmin() && event.getLocation().getQueryParameters().getParameters().containsKey("test");
             clips = adminTest ? picker.pickForAdmin(language, LEVEL, engine.maxQuestions())
                     : picker.pick(userId, language, LEVEL, engine.maxQuestions());
-            if (clips.size() < BlockEngine.FIRST_ROUND) {
+            if (clips.size() < Math.min(BlockEngine.FIRST_ROUND, engine.maxQuestions())) {
                 showMessage("There are not enough clips ready for this part yet.");
                 return;
             }
@@ -165,7 +167,7 @@ public class VideoBlockView extends VerticalLayout implements BeforeEnterObserve
             if (!adminTest) {
                 library.markUsed(current.getId());
             }
-            AdminFeedback.show(grade.correct(), grade.verdict() + (grade.usedModel() ? " (Meta: " + grade.reason() + ")" : " (exact match)")
+            AnswerFeedback.show(grade.correct(), grade.verdict() + (grade.usedModel() ? " (Meta: " + grade.reason() + ")" : " (exact match)")
                     + (grade.hasSpellingNote() ? " – spelling: " + grade.spelling() + " → " + grade.corrected() : "")
                     + " | expected: " + current.getExpectedText());
             engine.record(grade.correct());
@@ -187,6 +189,11 @@ public class VideoBlockView extends VerticalLayout implements BeforeEnterObserve
         add(new H2("Module 6 complete"));
         add(new Paragraph("Thank you. Your answers are saved."));
         Long attemptId = block.getAttemptId();
+        if (GuestAccount.isGuestNow()) {
+            add(new Button("See your quick summary", e -> getUI().ifPresent(ui -> ui.navigate("assessment/guest-summary"))));
+            add(new Button("Back to home", e -> getUI().ifPresent(ui -> ui.navigate(""))));
+            return;
+        }
         try {
             reportService.complete(attemptId);
             add(new Button("See your results", e -> getUI().ifPresent(ui -> ui.navigate("assessment/report",

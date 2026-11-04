@@ -54,8 +54,8 @@ public class OAuth2LoginSuccessHandler extends SavedRequestAwareAuthenticationSu
         if (existingUser.isEmpty()) {
             // User doesn't exist, create new user
             User newUser = new User();
-            newUser.setFirstName(givenName != null ? givenName : "");
-            newUser.setLastName(familyName != null ? familyName : "");
+            newUser.setFirstName(givenName != null && !givenName.isBlank() ? givenName : "-");
+            newUser.setLastName(familyName != null && !familyName.isBlank() ? familyName : "-");
             newUser.setEmail(email != null ? email : "");
             newUser.setDisplayName(resolveDisplayName(oAuth2User, givenName, email));
 
@@ -92,6 +92,25 @@ public class OAuth2LoginSuccessHandler extends SavedRequestAwareAuthenticationSu
         } else {
             User existing = existingUser.get();
             boolean updated = false;
+            // Google has just proved this person owns the address. A password account on it that was never confirmed by email could have
+            // been created by someone else, so its password is removed (the person can set a new one with "Forgot password").
+            // Teachers and admins are never touched.
+            if (!Boolean.TRUE.equals(existing.getEmailVerified())) {
+                if (existing.getRoleOrDefault() == UserRole.STUDENT && existing.getPassword() != null && !existing.getPassword().isEmpty()) {
+                    existing.setPassword(null);
+                    logger.info("Removed the unconfirmed password of {} after a Google sign-in", email);
+                }
+                existing.setEmailVerified(true);
+                updated = true;
+            }
+            if (isBlank(existing.getFirstName()) && !isBlank(givenName)) {
+                existing.setFirstName(givenName.trim());
+                updated = true;
+            }
+            if (isBlank(existing.getLastName()) && !isBlank(familyName)) {
+                existing.setLastName(familyName.trim());
+                updated = true;
+            }
             if (existing.getRole() == null) {
                 existing.setRole(UserRole.defaultRole());
                 updated = true;
@@ -190,6 +209,10 @@ public class OAuth2LoginSuccessHandler extends SavedRequestAwareAuthenticationSu
         return "";
     }
     
+    private static boolean isBlank(String text) {
+        return text == null || text.isBlank();
+    }
+
     private String resolveDisplayName(OAuth2User oAuth2User, String givenName, String email) {
         String name = oAuth2User.getAttribute("name");
         if (name != null && !name.isBlank()) return name.trim();

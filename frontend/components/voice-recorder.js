@@ -124,5 +124,5 @@ function attach(host, button, status, idleLabel) {
   });
 }
 
-window.tmlVoice = { attach, encodeWav };
-export { attach, encodeWav };
+window.tmlVoice = { attach, encodeWav, blobToWav, toBase64 };
+export { attach, encodeWav, blobToWav, toBase64 };
