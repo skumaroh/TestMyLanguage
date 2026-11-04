@@ -54,8 +54,8 @@ public class OAuth2LoginSuccessHandler extends SavedRequestAwareAuthenticationSu
         if (existingUser.isEmpty()) {
             // User doesn't exist, create new user
             User newUser = new User();
-            newUser.setFirstName(givenName != null ? givenName : "");
-            newUser.setLastName(familyName != null ? familyName : "");
+            newUser.setFirstName(givenName != null && !givenName.isBlank() ? givenName : "-");
+            newUser.setLastName(familyName != null && !familyName.isBlank() ? familyName : "-");
             newUser.setEmail(email != null ? email : "");
             newUser.setDisplayName(resolveDisplayName(oAuth2User, givenName, email));
 
