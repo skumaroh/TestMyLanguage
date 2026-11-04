@@ -26,4 +26,14 @@ class WordPictureTest {
         assertEquals(200, jpg.width());
         assertEquals(200, jpg.height());
     }
+
+    @Test
+    void aWebpPictureFromMetaCanBeReadAndResized() throws Exception {
+        // a 1x1 lossless WebP
+        byte[] webp = java.util.Base64.getDecoder().decode("UklGRhoAAABXRUJQVlA4TA0AAAAvAAAAEAcQERGIiP4HAA==");
+        ImageResizer.Size size = ImageResizer.sizeOf(webp);
+        org.junit.jupiter.api.Assertions.assertNotNull(size, "WebP must be readable");
+        ImageResizer.Size fitted = ImageResizer.sizeOf(ImageResizer.fit(webp, 120, 80, "png"));
+        assertEquals(120, fitted.width());
+    }
 }

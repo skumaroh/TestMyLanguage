@@ -15,7 +15,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 /**
- * Asks Meta's image model (Muse Image) for a picture. Used only from the admin page, one picture per click. The route, model and size
+ * Asks Meta's image model (Muse Image, model id muse-image-1.0) for a picture through POST /v1/images/generations (model, prompt, n). Meta returns
+ * the picture as base64 (WebP). Used only from the admin page, one picture per click. The route, model and size
  * are settings because Meta's documentation for the image route is still being confirmed: {@code meta.image.path},
  * {@code meta.image.model}, {@code meta.image.size}. The key is the same one the text model uses and is never logged. Each call is
  * recorded in {@code assess_ai_call_log} with the purpose {@code word-image}.
@@ -42,8 +43,8 @@ public class MetaImageGateway {
                             @Value("${meta.api.base-url:https://api.meta.ai/v1}") String baseUrl,
                             @Value("${meta.image.path:/images/generations}") String path,
                             @Value("${meta.api.key:}") String apiKey,
-                            @Value("${meta.image.model:muse-image}") String model,
-                            @Value("${meta.image.size:1024x1024}") String size) {
+                            @Value("${meta.image.model:muse-image-1.0}") String model,
+                            @Value("${meta.image.size:}") String size) {
         this.callLog = callLog;
         this.baseUrl = baseUrl.endsWith("/") ? baseUrl.substring(0, baseUrl.length() - 1) : baseUrl;
         this.path = path.startsWith("/") ? path : "/" + path;
@@ -74,7 +75,6 @@ public class MetaImageGateway {
             if (!size.isEmpty()) {
                 body.put("size", size);
             }
-            body.put("response_format", "b64_json");
             HttpRequest request = HttpRequest.newBuilder(URI.create(baseUrl + path))
                     .timeout(Duration.ofSeconds(120))
                     .header("Authorization", "Bearer " + apiKey)

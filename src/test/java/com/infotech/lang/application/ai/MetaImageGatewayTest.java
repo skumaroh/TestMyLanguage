@@ -12,7 +12,7 @@ import org.junit.jupiter.api.Test;
 class MetaImageGatewayTest {
 
     private final MetaImageGateway gateway = new MetaImageGateway(mock(AiCallLogRepository.class), "https://example.test/v1",
-            "/images/generations", "key", "muse-image", "1024x1024");
+            "/images/generations", "key", "muse-image-1.0", "");
 
     @Test
     void readsABase64PictureFromTheAnswer() {
