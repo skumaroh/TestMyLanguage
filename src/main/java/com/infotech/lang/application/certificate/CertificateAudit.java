@@ -84,6 +84,34 @@ public class CertificateAudit {
                 args.toArray());
     }
 
+    /** What the public verification page may show about a certificate: nothing about the email or the exact score. */
+    public record Verified(String name, String language, int level, OffsetDateTime issued, String number) {
+    }
+
+    /** The certificate with this verification code, if one was issued. The code is matched exactly (after {@link #normalizeCode}). */
+    public java.util.Optional<Verified> lookup(String code) {
+        String normalized = normalizeCode(code);
+        if (normalized == null) {
+            return java.util.Optional.empty();
+        }
+        return jdbc.query("select certificate_name, language, level, created_at, certificate_number from test_lang_certificate "
+                        + "where verification_code = ? and action = 'ISSUED'",
+                (rs, i) -> new Verified(rs.getString(1), rs.getString(2), rs.getInt(3), rs.getObject(4, OffsetDateTime.class),
+                        rs.getString(5)), normalized).stream().findFirst();
+    }
+
+    /** Upper case, spaces and dashes ignored, regrouped as XXXX-XXXX-XXXX; null when it cannot be a code. */
+    public static String normalizeCode(String text) {
+        if (text == null) {
+            return null;
+        }
+        String t = text.toUpperCase(Locale.ROOT).replaceAll("[\\s-]", "");
+        if (!t.matches("[A-HJKMNP-Z2-9]{12}")) {
+            return null;
+        }
+        return t.substring(0, 4) + "-" + t.substring(4, 8) + "-" + t.substring(8, 12);
+    }
+
     private String codeOf(long attemptId) {
         List<String> found = jdbc.query("select verification_code from test_lang_certificate where attempt_id = ? and action = 'ISSUED'",
                 (rs, i) -> rs.getString(1), attemptId);

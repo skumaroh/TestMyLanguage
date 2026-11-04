@@ -91,9 +91,10 @@ TestMyLanguage places a learner of Tamil or Hindi at Level 1 in about fifteen mi
 | --- | --- | --- |
 | Spring Boot Actuator | `build.gradle` | Apache-2.0 |
 | jsPDF, html2canvas (npm; make the certificate PDF in the browser) | `CertificateView`, `certificate-pdf.js` | MIT, MIT |
+| qrcode-generator (npm; draws the QR code on the certificate) | `CertificateView`, `certificate-qr.js` | MIT |
 | PyTorch (CPU), Hugging Face Transformers, NumPy | `tts/` (speech service image only) | BSD-style, Apache-2.0, BSD-3 |
 | `facebook/mms-tts-tam`, `facebook/mms-tts-hin` model weights | downloaded when the speech image is built | **CC-BY-NC 4.0** (non-commercial) |
-The Java and front-end dependencies of the application shell (Spring Boot, Vaadin, Azure SDK, PostgreSQL driver) come from the earlier code and are unchanged apart from the build changes above. The only new npm packages are jsPDF and html2canvas, listed above.
+The Java and front-end dependencies of the application shell (Spring Boot, Vaadin, Azure SDK, PostgreSQL driver) come from the earlier code and are unchanged apart from the build changes above. The only new npm packages are jsPDF, html2canvas and qrcode-generator, listed above.
 
 ## Known gaps
 Level 1 only. The Tamil and Hindi answers in the sentence list, and the Tamil and Hindi lines written by Meta for conversations and clips, are checked by the author and still need a native speaker's read. Speech in and out is still being checked with real voices. The MMS voice licence must be reviewed before any commercial use. Meta's MMS voices are single-speaker male voices, so every conversation persona is male; adding female and age-varied voices needs a multi-speaker voice model and is planned after the hackathon.
