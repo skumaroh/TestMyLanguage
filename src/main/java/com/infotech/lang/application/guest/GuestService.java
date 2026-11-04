@@ -54,25 +54,31 @@ public class GuestService {
         if (!enabled) {
             throw new IllegalStateException("Guest mode is switched off");
         }
+        User guest = newGuestUser();
+        Optional<Status> status = statuses.findAll().stream().findFirst();
+        status.ifPresent(guest::setStatus);
+        User saved = users.save(guest);
+        sessions.recordLogin(saved, sessionId);
+        event(language, STARTED, null);
+        return saved;
+    }
+
+    /** The guest account as stored: a random address, no password, no personal data. The user table requires a first and a last name. */
+    static User newGuestUser() {
         User guest = new User();
         String email = GuestAccount.newEmail();
         guest.setEmail(email);
         guest.setUserName(email);
         guest.setFirstName("Guest");
-        guest.setLastName("");
+        guest.setLastName("User");
         guest.setDisplayName("Guest");
         guest.setAuthProvider(GuestAccount.PROVIDER);
         guest.setEmailVerified(true);
         guest.setPassword(null);
         guest.setRole(UserRole.STUDENT);
         guest.setEnabled(true);
-        Optional<Status> status = statuses.findAll().stream().findFirst();
-        status.ifPresent(guest::setStatus);
         guest.setTeacher(null);
-        User saved = users.save(guest);
-        sessions.recordLogin(saved, sessionId);
-        event(language, STARTED, null);
-        return saved;
+        return guest;
     }
 
     /** One anonymous statistics row. Never throws. */
