@@ -57,7 +57,7 @@ public class GuestStartView extends VerticalLayout {
             add(new Paragraph("Guest access is not available right now."), new RouterLink("Sign in", LoginView.class));
             return;
         }
-        add(new Paragraph("Take a quick taste of the " + languageContext.getDisplayName() + " assessment: one question in each part, "
+        add(new Paragraph("See a sample of the " + languageContext.getDisplayName() + " assessment: a few quick questions, "
                 + "about two minutes, no sign-up."));
         add(new Paragraph("Guest sessions are deleted after 24 hours. Your answers are checked by Meta AI. "
                 + "Sign in afterwards for the full assessment and a certificate."));
