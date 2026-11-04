@@ -9,9 +9,11 @@ import com.infotech.lang.application.wordimages.ImageResizer;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
+import com.vaadin.flow.component.checkbox.Checkbox;
 import com.vaadin.flow.component.confirmdialog.ConfirmDialog;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.grid.Grid;
+import com.vaadin.flow.component.grid.GridMultiSelectionModel;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.html.Image;
@@ -32,6 +34,9 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -61,6 +66,14 @@ public class WordImageAdminView extends VerticalLayout {
     private final Grid<Row> grid = new Grid<>(Row.class, false);
     private final Paragraph summary = new Paragraph();
     private final TextArea style = new TextArea("Picture style (used for every word)");
+    private final Button batchButton = new Button("Make pictures for the selected words");
+    /** At most this many words per batch (each picture costs about one cent), made three at a time. */
+    static final int MAX_BATCH = 10;
+    private static final ExecutorService POOL = Executors.newFixedThreadPool(3, r -> {
+        Thread t = new Thread(r, "word-picture");
+        t.setDaemon(true);
+        return t;
+    });
 
     public WordImageAdminView(AssessWordRepository words, AssessmentMediaService media, MetaImageGateway images) {
         this.words = words;
@@ -77,6 +90,20 @@ public class WordImageAdminView extends VerticalLayout {
         style.setWidthFull();
         style.setMinHeight("110px");
         add(style, summary);
+        batchButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+        batchButton.setEnabled(false);
+        batchButton.addClickListener(e -> openBatch(new ArrayList<>(grid.getSelectedItems())));
+        add(batchButton);
+        grid.setSelectionMode(Grid.SelectionMode.MULTI);
+        ((GridMultiSelectionModel<Row>) grid.getSelectionModel())
+                .setSelectAllCheckboxVisibility(GridMultiSelectionModel.SelectAllCheckboxVisibility.HIDDEN);
+        grid.addSelectionListener(e -> {
+            int n = e.getAllSelectedItems().size();
+            batchButton.setEnabled(n > 0 && n <= MAX_BATCH && images.configured());
+            batchButton.setText(n == 0 ? "Make pictures for the selected words"
+                    : n > MAX_BATCH ? "Select at most " + MAX_BATCH + " words (" + n + " selected)"
+                    : "Make pictures for the " + n + " selected word" + (n == 1 ? "" : "s"));
+        });
 
         grid.addComponentColumn(row -> {
             Image thumb = new Image(row.current() == null ? "" : MediaUrls.forBlob("image", AssessmentMediaService.IMAGE_CONTAINER, row.current()),
@@ -241,6 +268,134 @@ public class WordImageAdminView extends VerticalLayout {
         dialog.add(new HorizontalLayout(left, right), notes, busy);
         dialog.getFooter().add(close, make, keep);
         dialog.open();
+    }
+
+    /** One word in a batch: its current picture, the new one when it arrives, and the tick to keep it. */
+    private static final class Card {
+        final Row row;
+        final String ext;
+        final ImageResizer.Size size;
+        final Div result = new Div(new Paragraph("Waiting…"));
+        final Checkbox keep = new Checkbox("Use this picture");
+        volatile byte[] bytes;
+
+        Card(Row row, String ext, ImageResizer.Size size) {
+            this.row = row;
+            this.ext = ext;
+            this.size = size;
+            keep.setEnabled(false);
+        }
+    }
+
+    /** Makes a picture for each selected word, three at a time, and lets the admin tick the ones to keep. Nothing is saved until then. */
+    private void openBatch(List<Row> selected) {
+        List<Row> rows = selected.stream().filter(r -> !r.savedAddress()).limit(MAX_BATCH).toList();
+        int skipped = selected.size() - rows.size();
+        if (rows.isEmpty()) {
+            Notification.show("None of the selected words can be changed here (they have a fixed picture address).");
+            return;
+        }
+        Dialog dialog = new Dialog();
+        dialog.setHeaderTitle(rows.size() + " new picture" + (rows.size() == 1 ? "" : "s"));
+        dialog.setWidth("94vw");
+        dialog.setMaxWidth("900px");
+        VerticalLayout list = new VerticalLayout();
+        list.setPadding(false);
+        List<Card> cards = new ArrayList<>();
+        for (Row row : rows) {
+            Optional<byte[]> oldBytes = row.current() == null ? Optional.empty() : media.read(AssessmentMediaService.IMAGE_CONTAINER, row.current());
+            ImageResizer.Size size = oldBytes.map(ImageResizer::sizeOf).orElse(null);
+            String ext = row.current() != null && row.current().toLowerCase(Locale.ROOT).matches(".*\\.jpe?g$") ? "jpg" : "png";
+            Card card = new Card(row, ext, size);
+            cards.add(card);
+            Div oldBox = new Div();
+            if (row.current() != null) {
+                Image old = new Image(MediaUrls.forBlob("image", AssessmentMediaService.IMAGE_CONTAINER, row.current()), "current");
+                old.setMaxHeight("150px");
+                old.setMaxWidth("100%");
+                oldBox.add(new Paragraph("Current"), old);
+            }
+            VerticalLayout word = new VerticalLayout(new Paragraph(row.word()), card.keep);
+            word.setPadding(false);
+            HorizontalLayout line = new HorizontalLayout(word, oldBox, card.result);
+            line.setWidthFull();
+            line.setAlignItems(com.vaadin.flow.component.orderedlayout.FlexComponent.Alignment.START);
+            list.add(line);
+        }
+        Paragraph note = new Paragraph("Meta is making the pictures, a few at a time. Tick the ones you like, then press Use ticked pictures. "
+                + "Nothing is saved before that."
+                + (skipped > 0 ? " " + skipped + " selected word(s) with a fixed picture address were left out." : ""));
+        ProgressBar busy = new ProgressBar();
+        busy.setIndeterminate(true);
+        Button save = new Button("Use ticked pictures");
+        save.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+        save.setEnabled(false);
+        Button tickAll = new Button("Tick all", e -> cards.stream().filter(c -> c.bytes != null).forEach(c -> c.keep.setValue(true)));
+        tickAll.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
+        Button close = new Button("Close", e -> dialog.close());
+        close.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
+        dialog.add(note, busy, list);
+        dialog.getFooter().add(close, tickAll, save);
+        dialog.open();
+
+        UI ui = UI.getCurrent();
+        AtomicInteger pending = new AtomicInteger(cards.size());
+        ui.setPollInterval(1000);
+        String styleText = style.getValue();
+        for (Card card : cards) {
+            CompletableFuture.supplyAsync(() -> {
+                ui.access(() -> {
+                    card.result.removeAll();
+                    card.result.add(new Paragraph("Asking Meta…"));
+                });
+                return images.generate(prompt(styleText, card.row.word(), ""));
+            }, POOL).whenComplete((result, error) -> ui.access(() -> {
+                card.result.removeAll();
+                if (error != null || result == null || !result.ok()) {
+                    card.result.add(new Paragraph("No picture: " + (result == null ? "something went wrong" : result.error()
+                            + (result.httpStatus() > 0 ? " (HTTP " + result.httpStatus() + ")" : ""))));
+                } else {
+                    try {
+                        int w = card.size == null ? 800 : card.size.width();
+                        int h = card.size == null ? 800 : card.size.height();
+                        card.bytes = ImageResizer.fit(result.bytes(), w, h, card.ext);
+                        Image img = new Image("data:image/" + ("jpg".equals(card.ext) ? "jpeg" : "png") + ";base64,"
+                                + java.util.Base64.getEncoder().encodeToString(card.bytes), "new");
+                        img.setMaxHeight("150px");
+                        img.setMaxWidth("100%");
+                        card.result.add(new Paragraph("New"), img);
+                        card.keep.setEnabled(media.canWritePictures());
+                    } catch (IOException ex) {
+                        card.result.add(new Paragraph("The picture could not be read."));
+                    }
+                }
+                if (pending.decrementAndGet() == 0) {
+                    ui.setPollInterval(-1);
+                    busy.setVisible(false);
+                    save.setEnabled(media.canWritePictures());
+                }
+            }));
+        }
+        save.addClickListener(e -> {
+            int saved = 0;
+            int failed = 0;
+            for (Card card : cards) {
+                if (card.keep.getValue() && card.bytes != null) {
+                    try {
+                        media.savePicture(card.row.word(), card.bytes, card.ext);
+                        saved++;
+                    } catch (RuntimeException ex) {
+                        logger.error("Could not save the picture of {}", card.row.word(), ex);
+                        failed++;
+                    }
+                }
+            }
+            Notification.show(saved + " picture" + (saved == 1 ? "" : "s") + " saved" + (failed > 0 ? ", " + failed + " could not be saved" : "")
+                    + ". The old pictures are kept as backups.");
+            dialog.close();
+            grid.deselectAll();
+            refresh();
+        });
     }
 
     static String prompt(String style, String word, String notes) {
