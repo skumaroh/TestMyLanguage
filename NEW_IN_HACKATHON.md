@@ -125,5 +125,5 @@ What this version does not do, or does only partly. Listed so that nothing here 
 - Video clips are made outside the Model API (it has no video generation), and the video part needs at least eight verified clips per language to run; without them the assessment has five parts.
 
 **Accounts and operations**
-- Email confirmation of new accounts, and Google sign-in, are not switched on in this version.
+- Sign-in is by Google (the email is confirmed by Google) or by email and password. Email confirmation of password sign-ups is not switched on yet, so a password account is not checked against a real inbox; the email service needs a paid plan first.
 - The limit on certificate checks and the live Meta calls are not load-tested; a Meta call can add a few seconds of waiting. Meta's Model API is in public preview, so model names and routes may change.
