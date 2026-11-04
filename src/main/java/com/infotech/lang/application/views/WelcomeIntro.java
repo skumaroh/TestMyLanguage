@@ -7,17 +7,19 @@ import com.infotech.lang.application.proctor.ProctorSlot;
 import com.infotech.lang.application.proctor.ProctorTextService;
 import com.infotech.lang.application.proctor.ProctorWarmUp;
 import com.infotech.lang.application.security.SecurityService;
-import com.vaadin.flow.component.button.Button;
+import com.infotech.lang.application.voice.SpeechRegistry;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H3;
 import com.vaadin.flow.component.html.Paragraph;
 import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import org.springframework.security.core.userdetails.UserDetails;
 
 /**
  * The welcome and activity introductions, shown in the home page's help popup. The words are Meta-written texts an admin has approved (or a plain built-in
- * text until then). The "Listen" button uses the browser's own voice, which is not a Meta product.
+ * text until then). Every line has a "Listen" button that plays Meta's open-source MMS voice from our speech service (English for the English
+ * line, the tested language for the lines after it), falling back to the device's own voice.
  */
 public class WelcomeIntro extends VerticalLayout {
 
@@ -26,12 +28,15 @@ public class WelcomeIntro extends VerticalLayout {
     private final ProctorTextService textService;
     private final ProctorWarmUp warmUp;
     private final String testedLanguage;
+    private final SpeechRegistry speech;
 
     public WelcomeIntro(SecurityService securityService,
                        UserRepository userRepository,
                        ProctorTextService textService,
                        ProctorWarmUp warmUp,
+                       SpeechRegistry speech,
                        int level) {
+        this.speech = speech;
         this.textService = textService;
         this.warmUp = warmUp;
         this.testedLanguage = textService.testedLanguage();
@@ -48,7 +53,7 @@ public class WelcomeIntro extends VerticalLayout {
             }
         }
         Span note = new Span("Texts written by Meta Muse Spark and approved by an administrator. "
-                + "The Listen button uses your browser's voice (not Meta).");
+                + "The Listen buttons play Meta's open-source MMS voice (your device's own voice if that is not available).");
         note.getStyle().set("color", "var(--lumo-secondary-text-color)").set("font-size", "var(--lumo-font-size-s)");
         add(note);
     }
@@ -67,58 +72,25 @@ public class WelcomeIntro extends VerticalLayout {
         if (heading != null) {
             card.add(new H3(heading));
         }
-        for (String line : resolved.text().split("\n")) {
-            card.add(new Paragraph(line));
+        String[] lines = resolved.text().split("\n");
+        boolean englishFirst = "en".equalsIgnoreCase(textService.proctorLanguage());
+        for (int i = 0; i < lines.length; i++) {
+            if (lines[i].isBlank()) {
+                continue;
+            }
+            String voice = englishFirst && i == 0 ? "english" : testedLanguage;
+            Paragraph text = new Paragraph(lines[i]);
+            text.getStyle().set("margin", "0");
+            HorizontalLayout row = new HorizontalLayout(text, new SpeakButton(lines[i], voice, speech));
+            row.setAlignItems(Alignment.CENTER);
+            row.getStyle().set("flex-wrap", "wrap").set("margin-bottom", "var(--lumo-space-xs)");
+            card.add(row);
         }
         Span source = new Span(resolved.fromMeta() ? "Written by Meta Muse Spark" : "Standard text");
         source.getStyle().set("color", "var(--lumo-secondary-text-color)").set("font-size", "var(--lumo-font-size-s)")
                 .set("margin-right", "var(--lumo-space-m)");
-        Button listen = new Button("Listen (browser voice, not Meta)");
-        Span voiceNote = new Span();
-        voiceNote.getStyle().set("display", "block").set("color", "var(--lumo-secondary-text-color)")
-                .set("font-size", "var(--lumo-font-size-s)").set("margin-top", "var(--lumo-space-xs)");
-        attachSpeech(listen, voiceNote, resolved.text());
-        card.add(source, listen, voiceNote);
+        card.add(source);
         return card;
-    }
-
-    /**
-     * The click is handled in the browser, not on the server: speech must start inside the click itself
-     * (some browsers refuse it after a server round trip), and it keeps working if the live connection is slow.
-     */
-    private void attachSpeech(Button listen, Span voiceNote, String text) {
-        // Only plain strings are passed to the browser (Vaadin cannot encode Java arrays); the browser splits the text.
-        listen.getElement().executeJs(
-                "const parts = $0.split('\\n'), testedTag = $1, note = $2, label = $3; const synth = window.speechSynthesis;"
-                        // Safari reads English too fast; slow only the English part, and only there
-                        + "const slowEnglish = /^((?!chrome|android|crios|fxios|edg).)*safari/i.test(navigator.userAgent);"
-                        + "if (!synth) { note.textContent = 'This browser cannot read text aloud.'; return; }"
-                        // asking for the list early makes the browser start loading its voices
-                        + "synth.getVoices();"
-                        + "this.addEventListener('click', () => {"
-                        + " const voices = synth.getVoices(); let missing = false;"
-                        + " synth.cancel(); synth.resume();"
-                        + " parts.forEach((t, i) => { const tag = i === 0 ? 'en-US' : testedTag;"
-                        + "  const u = new SpeechSynthesisUtterance(t); u.lang = tag; if (slowEnglish && i === 0) { u.rate = 0.8; }"
-                        + "  const lang = tag.toLowerCase(); const base = lang.split('-')[0];"
-                        + "  const v = voices.find(x => x.lang.toLowerCase().replace('_', '-') === lang)"
-                        + "   || voices.find(x => x.lang.toLowerCase().replace('_', '-').startsWith(base));"
-                        + "  if (v) { u.voice = v; } else if (i > 0) { missing = true; }"
-                        + "  synth.speak(u); });"
-                        + " note.textContent = missing ? 'This device has no ' + label + ' voice installed, so only the English part is read. '"
-                        + "  + 'Add one in the device speech or language settings.' : '';"
-                        + "});",
-                text, speechTag(testedLanguage), voiceNote.getElement(), testedLanguage);
-    }
-
-    private static String speechTag(String testedLanguage) {
-        if ("hindi".equalsIgnoreCase(testedLanguage)) {
-            return "hi-IN";
-        }
-        if ("tamil".equalsIgnoreCase(testedLanguage)) {
-            return "ta-IN";
-        }
-        return "en-US";
     }
 
     /** The name the student chose to be called (display name), then the first name; never the short login id. */

@@ -11,6 +11,7 @@ import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
+import com.infotech.lang.application.voice.SpeechRegistry;
 
 /** A small "?" Help link that opens the instructions in a popup with a Close link at the top. */
 final class HelpButton {
@@ -47,11 +48,43 @@ final class HelpButton {
 
     /** The help link whose popup is a few plain paragraphs. */
     static Button text(String title, String... paragraphs) {
-        com.vaadin.flow.component.html.Div body = new com.vaadin.flow.component.html.Div();
-        for (String p : paragraphs) {
-            body.add(new Paragraph(p));
+        return link(title, () -> {
+            com.vaadin.flow.component.html.Div body = new com.vaadin.flow.component.html.Div();
+            SpeechRegistry registry = registry();
+            for (String p : paragraphs) {
+                Paragraph text = new Paragraph(p);
+                if (speakable(p)) {
+                    text.getStyle().set("display", "inline");
+                    HorizontalLayout row = new HorizontalLayout(text, new SpeakButton(p.replace("\"", ""), "english", registry));
+                    row.setAlignItems(FlexComponent.Alignment.CENTER);
+                    row.getStyle().set("flex-wrap", "wrap");
+                    body.add(row);
+                } else {
+                    body.add(text);
+                }
+            }
+            return body;
+        });
+    }
+
+    /** Plain English instructions can be read aloud; lines with other scripts or typing examples (spelled out in English letters) cannot. */
+    static boolean speakable(String paragraph) {
+        if (paragraph == null || paragraph.isBlank() || paragraph.startsWith("Tip for typing")) {
+            return false;
         }
-        return link(title, () -> body);
+        return paragraph.chars().allMatch(c -> c < 128);
+    }
+
+    /** The speech registry, found through Spring (this helper is not itself a Spring bean); null when it cannot be found. */
+    private static SpeechRegistry registry() {
+        try {
+            var servlet = com.vaadin.flow.server.VaadinServlet.getCurrent();
+            var context = servlet == null ? null
+                    : org.springframework.web.context.support.WebApplicationContextUtils.getWebApplicationContext(servlet.getServletContext());
+            return context == null ? null : context.getBean(SpeechRegistry.class);
+        } catch (RuntimeException e) {
+            return null;
+        }
     }
 
     /** A module's heading ("Module 2 – Writing the letters") with its Help link beside it. */

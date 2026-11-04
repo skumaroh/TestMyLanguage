@@ -8,6 +8,7 @@ import com.infotech.lang.application.data.repository.UserRepository;
 import com.infotech.lang.application.proctor.ProctorTextService;
 import com.infotech.lang.application.proctor.ProctorWarmUp;
 import com.infotech.lang.application.report.ReportService;
+import com.infotech.lang.application.voice.SpeechRegistry;
 import com.infotech.lang.application.video.VideoPicker;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.html.Anchor;
@@ -55,6 +56,7 @@ public class HomeView extends VerticalLayout {
                     ReportService reportService,
                     ProctorTextService proctorTexts,
                     ProctorWarmUp proctorWarmUp,
+                    SpeechRegistry speechRegistry,
                     @Value("${proctor.level:1}") int level,
                     @Value("${assessment.blob-check.container:}") String blobContainer,
                     @Value("${assessment.blob-check.blob:}") String blobName) {
@@ -100,7 +102,7 @@ public class HomeView extends VerticalLayout {
             start.add(results);
         }
         start.add(HelpButton.link("Welcome and activity introductions",
-                () -> new WelcomeIntro(securityService, userRepository, proctorTexts, proctorWarmUp, level)));
+                () -> new WelcomeIntro(securityService, userRepository, proctorTexts, proctorWarmUp, speechRegistry, level)));
         add(start);
 
         add(new H3("Modules"));
