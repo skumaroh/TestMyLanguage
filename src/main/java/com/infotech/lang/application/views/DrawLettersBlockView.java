@@ -4,6 +4,7 @@ import com.infotech.lang.application.assessment.AssessBlockResult;
 import com.infotech.lang.application.assessment.AssessmentMediaService;
 import com.infotech.lang.application.assessment.AssessmentService;
 import com.infotech.lang.application.assessment.Modules;
+import com.infotech.lang.application.guest.GuestMode;
 import com.infotech.lang.application.assessment.BlockEngine;
 import com.infotech.lang.application.assessment.MediaUrls;
 import com.infotech.lang.application.config.LanguageContext;
@@ -55,7 +56,7 @@ public class DrawLettersBlockView extends VerticalLayout {
     /** Writing is harder than the other parts (owner decision, 2026-11-03): 2 of the first 4 ends the part, and 4 of 8 passes it. */
     static final double PASS_RATIO_LETTERS = 0.5;
 
-    private final BlockEngine engine = new BlockEngine(BlockEngine.FIRST_ROUND, BlockEngine.EXTRA_ROUND, PASS_RATIO_LETTERS, false);
+    private final BlockEngine engine = GuestMode.engine(PASS_RATIO_LETTERS);
 
     private List<String> letters = List.of();
     private AssessBlockResult block;

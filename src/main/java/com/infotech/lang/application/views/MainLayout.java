@@ -1,6 +1,7 @@
 package com.infotech.lang.application.views;
 
 import com.infotech.lang.application.config.LanguageContext;
+import com.infotech.lang.application.guest.GuestAccount;
 import com.infotech.lang.application.security.SecurityService;
 import com.vaadin.flow.component.applayout.AppLayout;
 import com.vaadin.flow.component.applayout.DrawerToggle;
@@ -24,15 +25,22 @@ public class MainLayout extends AppLayout {
         VerticalLayout menu = new VerticalLayout();
         menu.setPadding(true);
         menu.add(new RouterLink("Home", HomeView.class));
-                menu.add(new RouterLink("My results", HistoryView.class));
-        menu.add(new RouterLink("My profile", ProfileView.class));
-        menu.add(new RouterLink("Feedback", FeedbackView.class));
+        if (GuestAccount.isGuestNow()) {
+            Button full = new Button("Sign in for the full assessment", e -> securityService.logout());
+            full.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+            menu.add(full);
+        } else {
+            menu.add(new RouterLink("My results", HistoryView.class));
+            menu.add(new RouterLink("My profile", ProfileView.class));
+            menu.add(new RouterLink("Feedback", FeedbackView.class));
+        }
         if (isAdmin()) {
             menu.add(new RouterLink("Test Blocks", AdminBlocksView.class));
             menu.add(new RouterLink("Admin: student progress", AdminProgressView.class));
             menu.add(new RouterLink("Admin: feedback report", FeedbackReportView.class));
             menu.add(new RouterLink("Admin: certificates", CertificateAdminView.class));
             menu.add(new RouterLink("Admin: next-level interest", InterestAdminView.class));
+            menu.add(new RouterLink("Admin: guest statistics", GuestStatsView.class));
             menu.add(new RouterLink("Admin: voice lab", VoiceLabView.class));
             menu.add(new RouterLink("Admin: conversations", ConversationAdminView.class));
             menu.add(new RouterLink("Admin: clips", ClipAdminView.class));

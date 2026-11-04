@@ -54,6 +54,11 @@ public class UserRegistrationService {
         // Validate input
         validateRegistrationInput(firstName, lastName, userName, email, password);
 
+        // The guest address form is reserved for temporary guest accounts
+        if (com.infotech.lang.application.guest.GuestAccount.isGuestEmail(email)) {
+            throw new IllegalArgumentException("That email address cannot be used");
+        }
+
         // Check if email already exists
         if (userRepository.existsByEmailIgnoreCase(email)) {
             throw new IllegalArgumentException("Email address is already registered");

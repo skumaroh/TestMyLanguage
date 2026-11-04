@@ -3,6 +3,7 @@ package com.infotech.lang.application.views;
 import com.infotech.lang.application.assessment.ModuleProgressService;
 import com.infotech.lang.application.assessment.Modules;
 import com.infotech.lang.application.config.LanguageContext;
+import com.infotech.lang.application.guest.GuestAccount;
 import com.infotech.lang.application.data.entity.User;
 import com.infotech.lang.application.data.repository.UserRepository;
 import com.infotech.lang.application.proctor.ProctorTextService;
@@ -73,7 +74,12 @@ public class HomeView extends VerticalLayout {
         ModuleProgressService.Progress progress = userId == null ? new ModuleProgressService.Progress(null, Set.of(), false)
                 : moduleProgress.of(userId);
         boolean returning = progress.hasCompletedBefore() || !progress.finished().isEmpty();
-        add(new Paragraph(greeting(name, returning)));
+        if (GuestAccount.isGuestNow()) {
+            add(new Paragraph("You're trying the guest version: one question in each part, about two minutes. "
+                    + "Sign in any time for the full assessment, your own report and a certificate."));
+        } else {
+            add(new Paragraph(greeting(name, returning)));
+        }
 
         boolean videoAvailable = false;
         try {
