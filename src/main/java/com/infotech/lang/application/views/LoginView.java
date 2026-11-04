@@ -148,6 +148,15 @@ public class LoginView extends VerticalLayout implements BeforeEnterObserver {
 		
 		// Email and password sign-in is the default; OAuth buttons appear only when configured.
 		
+		if (Boolean.TRUE.equals(env.getProperty("guest.enabled", Boolean.class, false))) {
+			Paragraph guestText = new Paragraph("Just looking?");
+			guestText.getStyle().set("text-align", "center").set("margin", "var(--lumo-space-m) 0 0 0");
+			Button guestButton = new Button("Try it as a guest (one question per part)", e ->
+				getUI().ifPresent(ui -> ui.navigate("guest")));
+			guestButton.setWidthFull();
+			loginContainer.add(guestText, guestButton);
+		}
+
 		add(loginContainer);
 	}
 

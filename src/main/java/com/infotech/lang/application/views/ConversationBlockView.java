@@ -4,6 +4,8 @@ import com.infotech.lang.application.ai.SpeechToText;
 import com.infotech.lang.application.assessment.AssessBlockResult;
 import com.infotech.lang.application.assessment.AssessmentService;
 import com.infotech.lang.application.assessment.Modules;
+import com.infotech.lang.application.guest.GuestAccount;
+import com.infotech.lang.application.guest.GuestMode;
 import com.infotech.lang.application.assessment.BlockEngine;
 import com.infotech.lang.application.config.LanguageContext;
 import com.infotech.lang.application.conversation.Conversation;
@@ -61,7 +63,7 @@ public class ConversationBlockView extends VerticalLayout implements BeforeEnter
     private final AssessmentService assessment;
     private final ConversationTurnGrader grader;
     private final String language;
-    private final BlockEngine engine = new BlockEngine();
+    private final BlockEngine engine = GuestMode.engine();
     private final SpellingSuggester speller;
     private final SpeechToText speech;
     private final SecurityService securityService;
@@ -342,7 +344,11 @@ public class ConversationBlockView extends VerticalLayout implements BeforeEnter
             add(new Paragraph("Next: " + Modules.VIDEO.heading()));
             add(new Button("Continue to Module 6", e -> getUI().ifPresent(ui -> ui.navigate(Modules.VIDEO.route()))));
         }
-        if (!videoNext || MainLayout.isAdmin()) {
+        if (GuestAccount.isGuestNow()) {
+            if (!videoNext) {
+                add(new Button("See your quick summary", e -> getUI().ifPresent(ui -> ui.navigate("assessment/guest-summary"))));
+            }
+        } else if (!videoNext || MainLayout.isAdmin()) {
             try {
                 reportService.complete(attemptId);
                 add(new Button(videoNext ? "Finish here and see the results (admin)" : "See your results",
