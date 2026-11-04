@@ -89,7 +89,7 @@ public class LoginView extends VerticalLayout implements BeforeEnterObserver {
 		divider.getStyle().set("margin", "var(--lumo-space-s) 0");
 		loginContainer.add(divider);
 		
-		Paragraph signInText = new Paragraph("Sign in with your email");
+		Paragraph signInText = new Paragraph("Sign in with your user ID");
 		signInText.getStyle().set("margin", "0");
 		loginContainer.add(signInText);
 		
