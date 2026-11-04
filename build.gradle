@@ -53,6 +53,9 @@ dependencies {
     
     // SendGrid for email services
     implementation 'com.sendgrid:sendgrid-java:4.10.2'
+
+    // Reads WebP pictures (Meta's image model returns WebP); BSD-3-Clause
+    implementation 'com.twelvemonkeys.imageio:imageio-webp:3.12.0'
     
     // Security - version managed by Spring Boot
     implementation 'org.springframework.security:spring-security-web'
