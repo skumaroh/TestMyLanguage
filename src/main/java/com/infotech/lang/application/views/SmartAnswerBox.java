@@ -110,6 +110,11 @@ public class SmartAnswerBox extends VerticalLayout {
         return voice + (suggestionsUsed > 0 ? "SPELLING-HELP " + suggestionsUsed + " " : "");
     }
 
+    /** Takes words spoken in a full audio conversation, exactly as if the learner had spoken them into the Speak button. */
+    public void acceptSpoken(String spoken) {
+        takeSpokenText(spoken);
+    }
+
     private void takeSpokenText(String spoken) {
         String current = text();
         String joined = current.isEmpty() ? spoken : current + " " + spoken;
