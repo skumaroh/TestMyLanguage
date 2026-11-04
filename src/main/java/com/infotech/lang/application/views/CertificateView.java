@@ -148,6 +148,12 @@ public class CertificateView extends VerticalLayout implements BeforeEnterObserv
         download.addClickListener(e -> logClick(CertificateAudit.DOWNLOAD, email, fullName, code));
         print.addClickListener(e -> logClick(CertificateAudit.PRINT, email, fullName, code));
         HorizontalLayout buttons = new HorizontalLayout(download, print, back);
+        if (viewerIsOwner) {
+            Button next = new Button("What would you like next?", e -> getUI().ifPresent(ui -> ui.navigate("assessment/next-level",
+                    QueryParameters.simple(Map.of("attempt", String.valueOf(r.attemptId()))))));
+            next.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
+            buttons.add(next);
+        }
         buttons.addClassName("no-print");
         add(buttons);
 
