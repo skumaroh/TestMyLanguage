@@ -5,6 +5,7 @@ import com.infotech.lang.application.data.entity.UserRole;
 import com.infotech.lang.application.data.repository.UserRepository;
 import java.util.List;
 import java.util.Optional;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.oauth2.client.oidc.userinfo.OidcUserRequest;
 import org.springframework.security.oauth2.client.oidc.userinfo.OidcUserService;
@@ -24,6 +25,7 @@ public class GoogleOidcUserService implements OAuth2UserService<OidcUserRequest,
     private final OAuth2UserService<OidcUserRequest, OidcUser> google;
     private final UserRepository users;
 
+    @Autowired
     public GoogleOidcUserService(UserRepository users) {
         this(new OidcUserService(), users);
     }
