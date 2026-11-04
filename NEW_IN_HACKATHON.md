@@ -99,5 +99,31 @@ TestMyLanguage places a learner of Tamil or Hindi at Level 1 in about fifteen mi
 | `facebook/mms-tts-tam`, `facebook/mms-tts-hin` model weights | downloaded when the speech image is built | **CC-BY-NC 4.0** (non-commercial) |
 The Java and front-end dependencies of the application shell (Spring Boot, Vaadin, Azure SDK, PostgreSQL driver) come from the earlier code and are unchanged apart from the build changes above. The only new npm packages are jsPDF, html2canvas and qrcode-generator, and the only new Java library is imageio-webp, listed above.
 
-## Known gaps
-Level 1 only. The Tamil and Hindi answers in the sentence list, and the Tamil and Hindi lines written by Meta for conversations and clips, are checked by the author and still need a native speaker's read. Speech in and out is still being checked with real voices. The MMS voice licence must be reviewed before any commercial use. Meta's MMS voices are single-speaker male voices, so every conversation persona is male; adding female and age-varied voices needs a multi-speaker voice model and is planned after the hackathon.
+## Known limitations
+What this version does not do, or does only partly. Listed so that nothing here is a surprise.
+
+**Scope**
+- Level 1 only, in two languages (Tamil and Hindi); each language is its own live app with its own database.
+- The result is a placement estimate from one short session. It is not an official qualification, and the certificate says so.
+
+**Language quality**
+- The Tamil and Hindi answers in the sentence list, and the Tamil and Hindi lines Meta wrote for conversations and clips, are checked by the author and still need a native speaker's read.
+- Conversations and clips are drafts until an admin verifies them. There are only a handful per language, so a learner who retakes the assessment will meet repeats.
+- Spoken answers (Muse Voice Transcribe) were not measured on a large set of real Tamil and Hindi learners.
+
+**Voices**
+- The speech service uses Meta's open-source MMS-TTS: one male, single-speaker voice per language, so every conversation persona is male. Female and age-varied voices need a multi-speaker model and are planned.
+- The MMS model weights are licensed CC-BY-NC 4.0 (non-commercial); the licence must be reviewed before any commercial use.
+- When the speech service is down, the Listen buttons fall back to the device's own voice, whose Tamil and Hindi quality varies by device and may be missing.
+
+**Handwriting**
+- Writing is scored by a plain shape comparison, not by AI. Letters with very similar shapes can be confused, and the pass rule (a close-enough margin and a 50% pass mark for this part) was tuned on a small sample.
+
+**Pictures, audio and video**
+- Word pictures can be replaced with pictures made by Meta's image model (Muse Image) from an admin page. Pictures not replaced there, and words with a fixed picture address, are earlier images.
+- The word and letter audio, and the reference letter images, are earlier content (see `PRE_EXISTING.md`); they have not been re-recorded or regenerated.
+- Video clips are made outside the Model API (it has no video generation), and the video part needs at least eight verified clips per language to run; without them the assessment has five parts.
+
+**Accounts and operations**
+- Email confirmation of new accounts, and Google sign-in, are not switched on in this version.
+- The limit on certificate checks and the live Meta calls are not load-tested; a Meta call can add a few seconds of waiting. Meta's Model API is in public preview, so model names and routes may change.
