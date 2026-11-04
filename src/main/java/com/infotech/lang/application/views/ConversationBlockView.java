@@ -262,7 +262,7 @@ public class ConversationBlockView extends VerticalLayout implements BeforeEnter
                     + " | ASKED: " + asked + (reply.isBlank() ? "" : " | NEXT: " + reply);
             int duration = (int) Math.min(Integer.MAX_VALUE, System.currentTimeMillis() - shownAtMillis);
             assessment.recordAnswer(block.getId(), index + 1, itemRef(index + 1), log, turn.met(), duration);
-            AdminFeedback.show(turn.met(), turn.verdict() + (turn.reason().isBlank() ? "" : " (" + turn.reason() + ")")
+            AnswerFeedback.show(turn.met(), turn.verdict() + (turn.reason().isBlank() ? "" : " (" + turn.reason() + ")")
                     + (turn.hasSpellingNote() ? " – spelling: " + turn.spelling() + " → " + turn.corrected() : ""));
             engine.record(turn.met());
             history.add(new ConversationTurnGrader.Line(false, given));

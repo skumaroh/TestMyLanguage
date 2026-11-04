@@ -51,8 +51,8 @@ import org.springframework.security.core.userdetails.UserDetails;
  * the device's own keyboard works too). A tile order that matches the stored answer or an accepted form is correct without a
  * model; any other tile order, and every typed answer, is judged for meaning by {@link TranslationGrader} (a correct paraphrase,
  * another word order, or an answer in English letters passes). If the grader cannot be used it is tried once more; a second
- * failure counts 0 and the answer log starts with {@code FLAG}. One point per correct sentence; correctness is not shown until
- * the final report (admins see it after each answer). {@link BlockEngine} decides how many sentences are asked (4, then 4 more).
+ * failure counts 0 and the answer log starts with {@code FLAG}. One point per correct sentence; each answer is shown as
+ * Correct or Wrong (admins also see the detail). {@link BlockEngine} decides how many sentences are asked (4, then 4 more).
  */
 @Route(value = "assessment/translation", layout = MainLayout.class)
 @PageTitle("Translation | TestMyLanguage")
@@ -400,7 +400,7 @@ public class TranslationBlockView extends VerticalLayout {
             String log = (graderFailed ? "FLAG grader unavailable: " : "") + mode + given + " [" + grade.verdict() + "]" + spellingNote;
             int duration = (int) Math.min(Integer.MAX_VALUE, System.currentTimeMillis() - shownAtMillis);
             assessment.recordAnswer(block.getId(), engine.asked() + 1, "sentence:" + current.id(), log, grade.correct(), duration);
-            AdminFeedback.show(grade.correct(), mode + grade.verdict()
+            AnswerFeedback.show(grade.correct(), mode + grade.verdict()
                     + (grade.usedModel() ? " (Meta: " + grade.reason() + ")" : " (exact match)")
                     + (grade.hasSpellingNote() ? " – spelling: " + grade.spelling() + " → " + grade.corrected() : ""));
             engine.record(grade.correct());

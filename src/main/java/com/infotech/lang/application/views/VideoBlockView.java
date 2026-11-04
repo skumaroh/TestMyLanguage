@@ -165,7 +165,7 @@ public class VideoBlockView extends VerticalLayout implements BeforeEnterObserve
             if (!adminTest) {
                 library.markUsed(current.getId());
             }
-            AdminFeedback.show(grade.correct(), grade.verdict() + (grade.usedModel() ? " (Meta: " + grade.reason() + ")" : " (exact match)")
+            AnswerFeedback.show(grade.correct(), grade.verdict() + (grade.usedModel() ? " (Meta: " + grade.reason() + ")" : " (exact match)")
                     + (grade.hasSpellingNote() ? " – spelling: " + grade.spelling() + " → " + grade.corrected() : "")
                     + " | expected: " + current.getExpectedText());
             engine.record(grade.correct());

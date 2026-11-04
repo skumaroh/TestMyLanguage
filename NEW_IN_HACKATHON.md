@@ -49,7 +49,7 @@ TestMyLanguage places a learner of Tamil or Hindi at Level 1 in about fifteen mi
 | --- | --- |
 | `assessment/` (`BlockEngine`, `LevelScore`, `AssessmentService`, `AssessAttempt`, `AssessBlockResult`, `AssessAnswer` and repositories) | The block rule (4, then 4 more, 75%), the level rule, and storage of attempts, block results and every answer |
 | `AssessWord`, `AssessLetters` | **Read-only views** of the word and letter content the author prepared earlier (see `PRE_EXISTING.md`) |
-| `MainLayout`, `AdminBlocksView` ("Test Blocks"), `AdminFeedback` | The menu, and the admin page that runs any one part directly and shows Correct or Wrong after each answer (students never see it) |
+| `MainLayout`, `AdminBlocksView` ("Test Blocks"), `AnswerFeedback` | The menu, and the admin page that runs any one part directly and shows the detail behind each answer; every student sees Correct or Wrong after each answer |
 | `AssessmentMediaService`, `MediaUrls`, `views/api/MediaController` | Serves word pictures, letter and word audio and clips from private Blob containers through a signed-in-only route |
 
 ## The six parts

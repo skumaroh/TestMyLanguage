@@ -35,8 +35,8 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 
 /**
- * Signed-in landing page: a welcome (back) line, the start / continue link with the Help popup, and the six modules with the ones
- * finished ticked. Admins also see the database and Blob Storage checks and the admin links.
+ * Signed-in landing page: a welcome (back) line and the start link (or, part-way through, continue / start from the beginning) with the
+ * Help popup. Admins also see the database and Blob Storage checks and the admin links.
  */
 @Route(value = "", layout = MainLayout.class)
 @PageTitle("Home | TestMyLanguage")
@@ -83,13 +83,15 @@ public class HomeView extends VerticalLayout {
         }
         Optional<Modules> next = Modules.firstUnfinished(progress.finished(), videoAvailable);
 
-        // Start / continue / take it again, as a link, with the welcome texts under a Help link beside it
+        // New: "Start assessment" (or "Take it again"). Part-way through: carry on where they left off, or start from the beginning.
         HorizontalLayout start = new HorizontalLayout();
         start.setAlignItems(Alignment.CENTER);
-        if (next.isPresent()) {
-            String label = !progress.finished().isEmpty() ? "Continue assessment"
-                    : progress.hasCompletedBefore() ? "Take it again" : "Start assessment";
-            start.add(link(label, next.get().route()));
+        start.setWrap(true);
+        if (next.isPresent() && progress.finished().isEmpty()) {
+            start.add(link(progress.hasCompletedBefore() ? "Take it again" : "Start assessment", next.get().route()));
+        } else if (next.isPresent()) {
+            start.add(link("Continue where you left off (" + next.get().heading() + ")", next.get().route()));
+            start.add(link("Start from the beginning", Modules.WORDS.route()));
         } else if (progress.attemptId() != null) {
             Long attemptId = progress.attemptId();
             Button results = new Button("See your results", e -> {
@@ -103,25 +105,6 @@ public class HomeView extends VerticalLayout {
                 () -> new WelcomeIntro(securityService, userRepository, proctorTexts, proctorWarmUp, level)));
         add(start);
 
-        add(new H3("Modules"));
-        VerticalLayout list = new VerticalLayout();
-        list.setPadding(false);
-        list.setSpacing(false);
-        for (Modules module : Modules.taken(videoAvailable)) {
-            boolean done = progress.finished().contains(module.code());
-            if (done) {
-                Span finished = new Span("✓ " + module.heading());
-                finished.getStyle().set("color", "var(--lumo-success-text-color)");
-                list.add(finished);
-            } else if (next.isPresent() && next.get() == module) {
-                list.add(link(module.heading(), module.route()));
-            } else {
-                Span later = new Span(module.heading());
-                later.getStyle().set("color", "var(--lumo-disabled-text-color)");
-                list.add(later);
-            }
-        }
-        add(list);
         if (progress.hasCompletedBefore()) {
             add(new RouterLink("My results", HistoryView.class));
         }
