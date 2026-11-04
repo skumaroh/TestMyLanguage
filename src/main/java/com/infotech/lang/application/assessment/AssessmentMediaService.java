@@ -39,6 +39,8 @@ public class AssessmentMediaService {
     private final String imageConnectionString;
     private final String audioConnectionString;
     private final String referenceConnectionString;
+    /** A separate connection string that may also write to the images container (empty = the app can only read pictures). */
+    private final String imageWriteConnectionString;
     private final Map<String, BlobServiceClient> clients = new ConcurrentHashMap<>();
 
     /** Letter recordings are named {@code [timestamp_]u0B95[-u0BCD].ext}: the key is the letter's code points. */
@@ -60,7 +62,9 @@ public class AssessmentMediaService {
 
     public AssessmentMediaService(@Value("${azure.storage.connection-string:}") String imageConnectionString,
                                   @Value("${azure.storage.audio-connection-string:}") String audioConnectionString,
-                                  @Value("${azure.storage.reference-connection-string:}") String referenceConnectionString) {
+                                  @Value("${azure.storage.reference-connection-string:}") String referenceConnectionString,
+                                  @Value("${azure.storage.image-write-connection-string:}") String imageWriteConnectionString) {
+        this.imageWriteConnectionString = imageWriteConnectionString;
         this.imageConnectionString = imageConnectionString;
         this.audioConnectionString = audioConnectionString;
         this.referenceConnectionString = referenceConnectionString;
@@ -147,7 +151,7 @@ public class AssessmentMediaService {
             String stem = dot > 0 ? filename.substring(0, dot) : filename;
             Matcher m = LETTER_FILE.matcher(stem);
             if (m.matches()) {
-                newest.merge(m.group(1), blobName, (a, b) -> a.compareTo(b) >= 0 ? a : b);
+                newest.merge(m.group(1), blobName, (a, b) -> compareAge(a, b) >= 0 ? a : b);
             }
         }
         return newest;
@@ -199,6 +203,108 @@ public class AssessmentMediaService {
         }
     }
 
+    /** Orders two picture blob names by the number at the start of the file name (a bare name counts as oldest), then by name. */
+    static int compareAge(String a, String b) {
+        int byNumber = Long.compare(leadingNumber(a), leadingNumber(b));
+        return byNumber != 0 ? byNumber : a.compareTo(b);
+    }
+
+    private static long leadingNumber(String blobName) {
+        String file = blobName.substring(blobName.lastIndexOf('/') + 1);
+        int end = 0;
+        while (end < file.length() && end < 19 && Character.isDigit(file.charAt(end))) {
+            end++;
+        }
+        try {
+            return end == 0 ? 0 : Long.parseLong(file.substring(0, end));
+        } catch (NumberFormatException e) {
+            return 0;
+        }
+    }
+
+    /** Every picture blob of each word (lower case), newest first (pure). Files with a bare name are the oldest. */
+    static Map<String, List<String>> picturesByWord(List<String> blobNames) {
+        Map<String, List<String>> byWord = new HashMap<>();
+        for (String blobName : blobNames) {
+            String filename = blobName.substring(blobName.lastIndexOf('/') + 1).toLowerCase(Locale.ROOT);
+            int dot = filename.lastIndexOf('.');
+            if (dot <= 0) {
+                continue;
+            }
+            String ext = filename.substring(dot + 1);
+            if (!(ext.equals("jpg") || ext.equals("jpeg") || ext.equals("png") || ext.equals("gif") || ext.equals("webp"))) {
+                continue;
+            }
+            Matcher m = IMAGE_FILE.matcher(filename.substring(0, dot));
+            if (m.matches()) {
+                byWord.computeIfAbsent(m.group(1), k -> new ArrayList<>()).add(blobName);
+            }
+        }
+        byWord.values().forEach(list -> list.sort((x, y) -> compareAge(y, x)));
+        return byWord;
+    }
+
+    /** A new picture's blob name: {@code images/<19 digit time>_<word>.<ext>}; the long number makes it newer than any older name. */
+    static String newPictureName(String word, String ext, java.time.LocalDateTime now) {
+        String stamp = now.format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMddHHmmssSSS")) + "00";
+        String key = word.toLowerCase(Locale.ROOT).trim().replaceAll("[^\\p{L}\\p{N}]+", "_").replaceAll("^_+|_+$", "");
+        return "images/" + stamp + "_" + key + "." + ext;
+    }
+
+    /** True for a picture put here by the admin page (its name starts with the 19 digit time). */
+    public static boolean madeByAdminPage(String blobName) {
+        return leadingNumber(blobName) >= 1_000_000_000_000_000_000L;
+    }
+
+    /** Every picture blob under {@code images/}, grouped by word, newest first. Empty when the container cannot be listed. */
+    public Map<String, List<String>> listPictures() {
+        if (imageConnectionString == null || imageConnectionString.isBlank()) {
+            return Map.of();
+        }
+        try {
+            BlobServiceClient client = clients.computeIfAbsent(imageConnectionString,
+                    cs -> new BlobServiceClientBuilder().connectionString(cs).buildClient());
+            List<String> names = new ArrayList<>();
+            for (BlobItem item : client.getBlobContainerClient(IMAGE_CONTAINER)
+                    .listBlobs(new ListBlobsOptions().setPrefix("images/"), null)) {
+                names.add(item.getName());
+            }
+            return picturesByWord(names);
+        } catch (RuntimeException e) {
+            logger.warn("Could not list word pictures: {}", e.getClass().getSimpleName());
+            return Map.of();
+        }
+    }
+
+    public boolean canWritePictures() {
+        return imageWriteConnectionString != null && !imageWriteConnectionString.isBlank();
+    }
+
+    /** Saves a new picture of the word as the newest one (older pictures stay as backups) and returns its blob name. */
+    public String savePicture(String word, byte[] bytes, String ext) {
+        if (!canWritePictures()) {
+            throw new IllegalStateException("The app has no permission to save pictures");
+        }
+        String blobName = newPictureName(word, ext, java.time.LocalDateTime.now());
+        BlobServiceClient client = clients.computeIfAbsent(imageWriteConnectionString,
+                cs -> new BlobServiceClientBuilder().connectionString(cs).buildClient());
+        client.getBlobContainerClient(IMAGE_CONTAINER).getBlobClient(blobName)
+                .upload(new java.io.ByteArrayInputStream(bytes), bytes.length, false);
+        imageIndex = null;
+        return blobName;
+    }
+
+    /** Removes a picture that the admin page made (never an older one), so the previous picture is current again. */
+    public void removeAdminPicture(String blobName) {
+        if (!canWritePictures() || !madeByAdminPage(blobName) || !blobName.startsWith("images/")) {
+            throw new IllegalStateException("Only a picture made on the admin page can be removed");
+        }
+        BlobServiceClient client = clients.computeIfAbsent(imageWriteConnectionString,
+                cs -> new BlobServiceClientBuilder().connectionString(cs).buildClient());
+        client.getBlobContainerClient(IMAGE_CONTAINER).getBlobClient(blobName).delete();
+        imageIndex = null;
+    }
+
     /** Maps each word (lower case) to its newest picture among the given blob names under {@code images/} (pure). */
     static Map<String, String> indexImages(List<String> blobNames) {
         Map<String, String> newest = new HashMap<>();
@@ -215,10 +321,10 @@ public class AssessmentMediaService {
             String stem = filename.substring(0, dot);
             Matcher m = IMAGE_FILE.matcher(stem);
             if (m.matches()) {
-                newest.merge(m.group(1), blobName, (a, b) -> a.compareTo(b) >= 0 ? a : b);
+                newest.merge(m.group(1), blobName, (a, b) -> compareAge(a, b) >= 0 ? a : b);
             }
             // the older naming without a hash, {timestamp}_{word}, is covered above; a bare {word}.ext is the stem itself
-            newest.merge(stem, blobName, (a, b) -> a.compareTo(b) >= 0 ? a : b);
+            newest.merge(stem, blobName, (a, b) -> compareAge(a, b) >= 0 ? a : b);
         }
         return newest;
     }
