@@ -80,9 +80,12 @@ public class UserRegistrationService {
 
         // Create new user
         User user = new User();
-        user.setFirstName(firstName.trim());
-        user.setLastName(lastName.trim());
-        user.setDisplayName((displayName != null && !displayName.isBlank()) ? displayName.trim() : firstName.trim());
+        // first and last name are optional at sign-up (they are asked for when a certificate is printed)
+        String first = firstName == null || firstName.isBlank() ? null : firstName.trim();
+        String last = lastName == null || lastName.isBlank() ? null : lastName.trim();
+        user.setFirstName(first);
+        user.setLastName(last);
+        user.setDisplayName((displayName != null && !displayName.isBlank()) ? displayName.trim() : first);
         user.setEmail(email.trim().toLowerCase());
         user.setUserName(userName.trim());
         
@@ -128,11 +131,11 @@ public class UserRegistrationService {
      * Validate registration input fields.
      */
     private void validateRegistrationInput(String firstName, String lastName, String userName, String email, String password) {
-        if (firstName == null || firstName.trim().isEmpty()) {
-            throw new IllegalArgumentException("First name is required");
+        if (firstName != null && firstName.trim().length() > 100) {
+            throw new IllegalArgumentException("First name must be at most 100 characters long");
         }
-        if (lastName == null || lastName.trim().isEmpty()) {
-            throw new IllegalArgumentException("Last name is required");
+        if (lastName != null && lastName.trim().length() > 100) {
+            throw new IllegalArgumentException("Last name must be at most 100 characters long");
         }
         if (userName == null || userName.trim().isEmpty()) {
             throw new IllegalArgumentException("Username is required");

@@ -43,6 +43,7 @@ public class ReportView extends VerticalLayout implements BeforeEnterObserver {
     private final transient SecurityService securityService;
     private final transient UserRepository userRepository;
     private final transient SpeechRegistry speechRegistry;
+    private transient String firstName = "";
 
     public ReportView(ReportService reports, SecurityService securityService, UserRepository userRepository,
                       SpeechRegistry speechRegistry) {
@@ -77,6 +78,9 @@ public class ReportView extends VerticalLayout implements BeforeEnterObserver {
                 message("There are no results to show yet. Finish an assessment to see them here.");
                 return;
             }
+            // address the learner by first name, but only on their own results (an admin looking at someone else's does not)
+            firstName = attempt.filter(a -> userId.equals(a.getUserId())).flatMap(a -> userRepository.findById(userId))
+                    .map(User::getFirstName).map(String::trim).orElse("");
             show(report.get());
         } catch (RuntimeException e) {
             message("Sorry, the results could not be shown right now. Please try again in a moment.");
@@ -85,7 +89,7 @@ public class ReportView extends VerticalLayout implements BeforeEnterObserver {
 
     private void show(ReportSnapshot r) {
         String language = "hindi".equalsIgnoreCase(r.language()) ? "Hindi" : "Tamil";
-        add(new H2("Your results – " + language + ", Level " + r.level()));
+        add(new H2((firstName.isEmpty() ? "Your" : firstName + ", your") + " results – " + language + ", Level " + r.level()));
         Div result = new Div(new Span(r.levelMessage()));
         result.getStyle().set("font-size", "1.3em").set("font-weight", "600").set("padding", "var(--lumo-space-m)")
                 .set("border-radius", "var(--lumo-border-radius-l)").set("width", "100%").set("box-sizing", "border-box")
