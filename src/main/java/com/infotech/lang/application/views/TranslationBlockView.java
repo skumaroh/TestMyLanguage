@@ -3,6 +3,7 @@ package com.infotech.lang.application.views;
 import com.infotech.lang.application.ai.SpeechToText;
 import com.infotech.lang.application.assessment.AssessBlockResult;
 import com.infotech.lang.application.assessment.AssessmentService;
+import com.infotech.lang.application.assessment.Modules;
 import com.infotech.lang.application.assessment.BlockEngine;
 import com.infotech.lang.application.config.LanguageContext;
 import com.infotech.lang.application.data.entity.User;
@@ -137,7 +138,7 @@ public class TranslationBlockView extends VerticalLayout {
         shownAtMillis = System.currentTimeMillis();
         boolean tiles = current.hasAnswer() && engine.asked() % 2 == 0;
         String name = "hindi".equalsIgnoreCase(language) ? "Hindi" : "Tamil";
-        add(new H2("Translation"), new H3("Sentence " + (engine.asked() + 1)),
+        add(HelpButton.heading(Modules.TRANSLATION, translationHelp().split("\\n")), new H3("Sentence " + (engine.asked() + 1)),
                 new Paragraph((tiles ? "Tap the " + name + " words in the right order to say this sentence."
                         : "Write this sentence in " + name + ".")),
                 new Paragraph(current.english()));
@@ -148,6 +149,18 @@ public class TranslationBlockView extends VerticalLayout {
         }
     }
 
+    /** The instructions for the Help link: how each kind of question is answered, and the tip for typing in English letters. */
+    private String translationHelp() {
+        String name = "hindi".equalsIgnoreCase(language) ? "Hindi" : "Tamil";
+        return "Each sentence is in English. Say it in " + name + ": either tap the " + name + " words in the right order, or type your answer.\n"
+                + "Tip for typing: write " + name + " words in English letters (for example "
+                + ("hindi".equalsIgnoreCase(language) ? "\"mai paanee peetaa hoon\"" : "\"naan thanneer kudikkiren\"")
+                + ") and they turn into " + name + " letters. When you pause, Meta may suggest a better spelling; tap it to use it. "
+                + ("hindi".equalsIgnoreCase(language) ? "Use \"aa\", \"ee\", \"oo\" for long vowels. "
+                        : "Use \"aa\", \"ee\", \"oo\" for long vowels and \"ae\" for ஏ. ")
+                + "You can also use your own " + name + " keyboard.";
+    }
+
     private void showTyping(String name) {
         tapped.clear();
         answerBox = new TextArea();
@@ -156,13 +169,6 @@ public class TranslationBlockView extends VerticalLayout {
         answerBox.setMinHeight("100px");
         answerBox.setMaxLength(400);
         answerBox.getStyle().set("font-size", "1.3em");
-        Paragraph hint = new Paragraph("Tip: type " + name + " words in English letters (for example "
-                + ("hindi".equalsIgnoreCase(language) ? "\"mai paanee peetaa hoon\"" : "\"naan thanneer kudikkiren\"")
-                + ") and they turn into " + name + " letters. When you pause, Meta may suggest a better spelling; tap it to use it. "
-                + ("hindi".equalsIgnoreCase(language) ? "Use \"aa\", \"ee\", \"oo\" for long vowels. "
-                        : "Use \"aa\", \"ee\", \"oo\" for long vowels and \"ae\" for ஏ. ")
-                + "You can also use your own " + name + " keyboard.");
-        hint.getStyle().set("color", "var(--lumo-secondary-text-color)").set("font-size", "var(--lumo-font-size-s)");
         checkButton = new Button("Submit", e -> submit());
         Button clearButton = new Button("Clear", e -> clearTyping());
         suggestionRow = new Div();
@@ -181,7 +187,7 @@ public class TranslationBlockView extends VerticalLayout {
         });
         VoiceInput voice = new VoiceInput(speech, language, this::takeSpokenText);
         // Submit and Clear sit right under the text box; the microphone, the spelling suggestions and the tip come after
-        add(answerBox, new HorizontalLayout(checkButton, clearButton), voice, suggestionRow, hint);
+        add(answerBox, new HorizontalLayout(checkButton, clearButton), voice, suggestionRow);
         String tag = "hindi".equalsIgnoreCase(language) ? "hindi" : "tamil";
         answerBox.getElement().executeJs("window.tmlTransliterate && window.tmlTransliterate.attach(this, $0)", tag);
     }
@@ -421,16 +427,16 @@ public class TranslationBlockView extends VerticalLayout {
 
     private void showDone() {
         removeAll();
-        add(new H2("Translation finished"));
+        add(new H2("Module 4 complete"));
         add(new Paragraph("Thank you. Your answers are saved. Your results will be shown at the end of the assessment."));
-        add(new Paragraph("The next part is the conversation."));
-        add(new Button("Continue to the conversation", e -> getUI().ifPresent(ui -> ui.navigate("assessment/conversation"))));
-        add(new Button("Back to the welcome page", e -> getUI().ifPresent(ui -> ui.navigate("welcome"))));
+        add(new Paragraph("Next: " + Modules.CONVERSATION.heading()));
+        add(new Button("Continue to Module 5", e -> getUI().ifPresent(ui -> ui.navigate(Modules.CONVERSATION.route()))));
+        add(new Button("Back to home", e -> getUI().ifPresent(ui -> ui.navigate(""))));
     }
 
     private void showMessage(String text) {
         removeAll();
-        add(new H2("Translation"), new Paragraph(text));
+        add(new H2(Modules.TRANSLATION.heading()), new Paragraph(text));
     }
 
     private static UUID userIdOf(SecurityService securityService, UserRepository userRepository) {

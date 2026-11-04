@@ -3,6 +3,7 @@ package com.infotech.lang.application.views;
 import com.infotech.lang.application.assessment.AssessBlockResult;
 import com.infotech.lang.application.assessment.AssessmentMediaService;
 import com.infotech.lang.application.assessment.AssessmentService;
+import com.infotech.lang.application.assessment.Modules;
 import com.infotech.lang.application.assessment.BlockEngine;
 import com.infotech.lang.application.assessment.MediaUrls;
 import com.infotech.lang.application.config.LanguageContext;
@@ -106,8 +107,8 @@ public class DrawLettersBlockView extends VerticalLayout {
         current = letters.get(engine.asked());
         triesOnCurrent = 0;
         shownAtMillis = System.currentTimeMillis();
-        add(new H2("Letters"), new H3("Letter " + (engine.asked() + 1)),
-                new Paragraph("Write this letter on the pad, then tap Check."));
+        add(HelpButton.heading(Modules.DRAW_LETTERS, "Write the letter shown on the pad with your finger or mouse, then tap Check.",
+                "If it does not look close enough you can try again. Tap Clear to wipe the pad."), new H3("Letter " + (engine.asked() + 1)));
 
         referenceImages.referenceUrlFor(current).map(url -> MediaUrls.proxyUrl("image", url)).ifPresent(src -> {
             Image picture = new Image(src, "the letter to write");
@@ -168,15 +169,16 @@ public class DrawLettersBlockView extends VerticalLayout {
 
     private void showDone() {
         removeAll();
-        add(new H2("Letters finished"));
+        add(new H2("Module 2 complete"));
         add(new Paragraph("Thank you. Your answers are saved. Your results will be shown at the end of the assessment."));
-        add(new Button("Continue to the audio words", e -> getUI().ifPresent(ui -> ui.navigate("assessment/audio-words"))));
-        add(new Button("Back to the welcome page", e -> getUI().ifPresent(ui -> ui.navigate("welcome"))));
+        add(new Paragraph("Next: " + Modules.AUDIO_WORDS.heading()));
+        add(new Button("Continue to Module 3", e -> getUI().ifPresent(ui -> ui.navigate(Modules.AUDIO_WORDS.route()))));
+        add(new Button("Back to home", e -> getUI().ifPresent(ui -> ui.navigate(""))));
     }
 
     private void showMessage(String text) {
         removeAll();
-        add(new H2("Letters"), new Paragraph(text));
+        add(new H2(Modules.DRAW_LETTERS.heading()), new Paragraph(text));
     }
 
     private static UUID userIdOf(SecurityService securityService, UserRepository userRepository) {

@@ -31,6 +31,12 @@ public class LanguageContext {
         return deriveLanguageFromDatasourceUrl();
     }
     
+    /** The language with a capital letter, for titles: "Tamil", "Hindi". */
+    public String getDisplayName() {
+        String l = getLanguage();
+        return l == null || l.isBlank() ? "" : Character.toUpperCase(l.charAt(0)) + l.substring(1);
+    }
+
     private String deriveLanguageFromDatasourceUrl() {
         if (datasourceUrl == null || datasourceUrl.trim().isEmpty()) {
             return "tamil";
