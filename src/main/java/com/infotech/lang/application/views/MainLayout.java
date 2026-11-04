@@ -36,6 +36,7 @@ public class MainLayout extends AppLayout {
             menu.add(new RouterLink("Admin: voice lab", VoiceLabView.class));
             menu.add(new RouterLink("Admin: conversations", ConversationAdminView.class));
             menu.add(new RouterLink("Admin: clips", ClipAdminView.class));
+            menu.add(new RouterLink("Admin: word pictures", WordImageAdminView.class));
             menu.add(new RouterLink("Admin: proctor texts", ProctorReviewView.class));
             menu.add(new RouterLink("Admin: handwriting check", HandwritingCheckView.class));
             menu.add(new RouterLink("Admin: translation check", TranslationCheckView.class));
