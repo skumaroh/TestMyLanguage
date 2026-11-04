@@ -48,4 +48,10 @@ class CertificateTest {
         assertEquals("", Certificate.cleanNamePart(null));
         assertTrue(Certificate.DISCLAIMER.contains("not an accredited qualification"));
     }
+
+    @Test
+    void theFirstLevelIsCalledFoundation() {
+        assertEquals("Level 1 (Foundation)", Certificate.levelLabel(1));
+        assertEquals("Level 2", Certificate.levelLabel(2));
+    }
 }

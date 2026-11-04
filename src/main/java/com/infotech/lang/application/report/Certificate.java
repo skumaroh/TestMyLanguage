@@ -40,6 +40,11 @@ public final class Certificate {
         }
     }
 
+    /** "Level 1 (Foundation)" for the first level, otherwise "Level N". */
+    public static String levelLabel(int level) {
+        return level == 1 ? "Level 1 (Foundation)" : "Level " + level;
+    }
+
     public static String languageName(ReportSnapshot r) {
         return "hindi".equalsIgnoreCase(r.language()) ? "Hindi" : "Tamil";
     }

@@ -1,6 +1,9 @@
 package com.infotech.lang.application.views;
 
 import com.infotech.lang.application.assessment.AssessAttempt;
+import com.infotech.lang.application.certificate.CertificateAudit;
+import com.infotech.lang.application.certificate.CertificateNameService;
+import com.infotech.lang.application.certificate.NameScreen;
 import com.infotech.lang.application.data.entity.User;
 import com.infotech.lang.application.data.repository.UserRepository;
 import com.infotech.lang.application.report.Certificate;
@@ -19,8 +22,6 @@ import com.vaadin.flow.component.html.Paragraph;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
-import com.vaadin.flow.component.notification.Notification;
-import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.PageTitle;
@@ -52,17 +53,25 @@ public class CertificateView extends VerticalLayout implements BeforeEnterObserv
     private final transient ReportService reports;
     private final transient SecurityService securityService;
     private final transient UserRepository userRepository;
+    private final transient CertificateNameService names;
+    private final transient NameScreen screen;
+    private final transient CertificateAudit audit;
 
-    public CertificateView(ReportService reports, SecurityService securityService, UserRepository userRepository) {
+    public CertificateView(ReportService reports, SecurityService securityService, UserRepository userRepository,
+                           CertificateNameService names, NameScreen screen, CertificateAudit audit) {
         this.reports = reports;
         this.securityService = securityService;
         this.userRepository = userRepository;
+        this.names = names;
+        this.screen = screen;
+        this.audit = audit;
         setAlignItems(Alignment.CENTER);
     }
 
     private transient ReportSnapshot report;
     private transient UUID ownerId;
     private transient boolean viewerIsOwner;
+    private transient UUID viewerId;
 
     @Override
     public void beforeEnter(BeforeEnterEvent event) {
@@ -84,6 +93,7 @@ public class CertificateView extends VerticalLayout implements BeforeEnterObserv
             }
             report = loaded.get();
             ownerId = attempt.get().getUserId();
+            viewerId = viewer;
             viewerIsOwner = viewer.equals(ownerId);
             render();
         } catch (RuntimeException e) {
@@ -91,54 +101,33 @@ public class CertificateView extends VerticalLayout implements BeforeEnterObserv
         }
     }
 
-    /** Shows the certificate when the learner's first and last name are on file, otherwise asks for them (and saves them to the profile). */
+    /** Shows the certificate when the learner's certificate name is saved; otherwise asks for it (once) and saves it to the profile. */
     private void render() {
         removeAll();
         Optional<User> owner = ownerId == null ? Optional.empty() : userRepository.findById(ownerId);
-        String first = owner.map(User::getFirstName).orElse("");
-        String last = owner.map(User::getLastName).orElse("");
-        if (Certificate.fullName(first, last).isEmpty()) {
+        Optional<String> saved = names.get(ownerId);
+        if (saved.isEmpty()) {
             if (viewerIsOwner) {
-                askForName("", "", "Well done! To print your certificate we need your first and last name. They will also be saved to your "
-                        + "profile.");
+                add(new H2("Your name for the certificate"), new Paragraph("Well done! Before your certificate is shown we need the name to "
+                        + "print on it."));
+                String suggestion = owner.map(u -> Certificate.fullName(u.getFirstName(), u.getLastName())).orElse("");
+                add(new CertificateNameForm(names, screen, ownerId, suggestion, name -> render()));
             } else {
-                message("This learner has not added a first and last name to their profile yet, so the certificate cannot be printed.");
+                message("This learner has not saved a name for their certificate yet, so it cannot be shown.");
             }
             return;
         }
-        show(Certificate.fullName(first, last), first, last);
+        String email = owner.map(User::getEmail).orElse("");
+        String code = null;
+        try {
+            code = audit.issue(report, ownerId, email, saved.get());
+        } catch (RuntimeException e) {
+            // the certificate is still shown; it just has no verification code until the log is available
+        }
+        show(saved.get(), email, code);
     }
 
-    private void askForName(String first, String last, String intro) {
-        add(new H2("Your name for the certificate"), new Paragraph(intro));
-        TextField firstName = new TextField("First name");
-        firstName.setValue(first == null ? "" : first);
-        firstName.setMaxLength(Certificate.MAX_NAME_PART);
-        TextField lastName = new TextField("Last name");
-        lastName.setValue(last == null ? "" : last);
-        lastName.setMaxLength(Certificate.MAX_NAME_PART);
-        Button save = new Button("Save and show my certificate", e -> {
-            String f = Certificate.cleanNamePart(firstName.getValue());
-            String l = Certificate.cleanNamePart(lastName.getValue());
-            if (f.isEmpty() || l.isEmpty()) {
-                Notification.show("Please enter both your first name and your last name.");
-                return;
-            }
-            try {
-                User user = userRepository.findById(ownerId).orElseThrow();
-                user.setFirstName(f);
-                user.setLastName(l);
-                userRepository.save(user);
-                render();
-            } catch (RuntimeException ex) {
-                Notification.show("Sorry, your name could not be saved right now. Please try again.");
-            }
-        });
-        save.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-        add(new HorizontalLayout(firstName, lastName), save);
-    }
-
-    private void show(String fullName, String first, String last) {
+    private void show(String fullName, String email, String code) {
         // print rules: A4 landscape, and the buttons are not printed
         add(new Html("<style>@media print{.no-print{display:none !important} body{background:#fff !important}"
                 + " @page{size:A4 landscape;margin:10mm}}</style>"));
@@ -155,15 +144,10 @@ public class CertificateView extends VerticalLayout implements BeforeEnterObserv
         print.getElement().executeJs("this.addEventListener('click', () => window.print());");
         Button back = new Button("Back to my results", e -> getUI().ifPresent(ui -> ui.navigate("assessment/report",
                 QueryParameters.simple(Map.of("attempt", String.valueOf(r.attemptId()))))));
+        // the click itself is handled in the browser; these also write it to the certificate log
+        download.addClickListener(e -> logClick(CertificateAudit.DOWNLOAD, email, fullName, code));
+        print.addClickListener(e -> logClick(CertificateAudit.PRINT, email, fullName, code));
         HorizontalLayout buttons = new HorizontalLayout(download, print, back);
-        if (viewerIsOwner) {
-            Button change = new Button("Change my name", e -> {
-                removeAll();
-                askForName(first, last, "Change your first and last name. The new name is saved to your profile.");
-            });
-            change.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
-            buttons.add(change);
-        }
         buttons.addClassName("no-print");
         add(buttons);
 
@@ -175,20 +159,31 @@ public class CertificateView extends VerticalLayout implements BeforeEnterObserv
         H1 title = new H1("Certificate of Achievement");
         title.getStyle().set("margin", "0.3em 0 0.6em 0").set("font-size", "2.6em");
         Paragraph awarded = line("This certificate is awarded to");
-        Paragraph did = line("for completing the Level " + r.level() + " placement assessment in " + Certificate.languageName(r)
+        Paragraph did = line("for completing the " + Certificate.levelLabel(r.level()) + " placement assessment in " + Certificate.languageName(r)
                 + " with an overall score of " + Math.round(r.percent()) + "%.");
         did.getStyle().set("font-size", "1.3em");
         Paragraph when = line(Certificate.dateText(r).isEmpty() ? "" : "Completed on " + Certificate.dateText(r));
-        Paragraph number = line("Certificate number " + Certificate.number(r));
+        Paragraph number = line("Certificate number " + Certificate.number(r)
+                + (code == null ? "" : "   ·   Verification code " + code));
         number.getStyle().set("font-size", "0.9em").set("color", "#555");
         Paragraph disclaimer = line(Certificate.DISCLAIMER);
         disclaimer.getStyle().set("font-size", "0.8em").set("color", "#555").set("margin-top", "1.5em");
-        page.add(brand, title, awarded, name, did, when, number, disclaimer);
+        Paragraph enteredBy = line("Name as entered by the learner");
+        enteredBy.getStyle().set("font-size", "0.75em").set("color", "#777").set("margin", "0.2em 0 0.8em 0");
+        page.add(brand, title, awarded, name, enteredBy, did, when, number, disclaimer);
         add(page);
         // the PDF is made in the browser from the page as shown (so a Tamil or Hindi name is drawn correctly)
         download.getElement().executeJs("const page = $0, file = $1; this.addEventListener('click', () => "
                 + "{ if (window.tmlCertificate) { window.tmlCertificate.download(page, file); } });",
                 page.getElement(), "TestMyLanguage-certificate-" + Certificate.number(r) + ".pdf");
+    }
+
+    private void logClick(String action, String email, String name, String code) {
+        try {
+            audit.click(action, report, ownerId, viewerId, email, name, code);
+        } catch (RuntimeException e) {
+            // the log being unavailable must not stop the learner from printing
+        }
     }
 
     private static Paragraph line(String text) {
