@@ -42,7 +42,9 @@ import org.springframework.security.core.userdetails.UserDetails;
  */
 @NpmPackage(value = "jspdf", version = "2.5.2")
 @NpmPackage(value = "html2canvas", version = "1.4.1")
+@NpmPackage(value = "qrcode-generator", version = "1.4.4")
 @JsModule("./components/certificate-pdf.js")
+@JsModule("./components/certificate-qr.js")
 @Route(value = "assessment/certificate")
 @PageTitle("Certificate | TestMyLanguage")
 @PermitAll
@@ -176,7 +178,16 @@ public class CertificateView extends VerticalLayout implements BeforeEnterObserv
         disclaimer.getStyle().set("font-size", "0.8em").set("color", "#555").set("margin-top", "1.5em");
         Paragraph enteredBy = line("Name as entered by the learner");
         enteredBy.getStyle().set("font-size", "0.75em").set("color", "#777").set("margin", "0.2em 0 0.8em 0");
-        page.add(brand, title, awarded, name, enteredBy, did, when, number, disclaimer);
+        page.add(brand, title, awarded, name, enteredBy, did, when, number);
+        if (code != null) {
+            Div qr = new Div();
+            qr.getStyle().set("margin", "0.8em auto 0 auto").set("width", "96px").set("min-height", "96px");
+            Paragraph scan = line("Scan or visit /verify to check this certificate");
+            scan.getStyle().set("font-size", "0.75em").set("color", "#555").set("margin", "0.2em 0");
+            page.add(qr, scan);
+            qr.getElement().executeJs("window.tmlCertificateQr && window.tmlCertificateQr.draw(this, $0)", code);
+        }
+        page.add(disclaimer);
         add(page);
         // the PDF is made in the browser from the page as shown (so a Tamil or Hindi name is drawn correctly)
         download.getElement().executeJs("const page = $0, file = $1; this.addEventListener('click', () => "
