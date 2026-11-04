@@ -25,11 +25,14 @@ public class SecurityConfig extends VaadinWebSecurity {
   private final FormLoginSuccessHandler formLoginSuccessHandler;
   private final CustomUserDetailsService userDetailsService;
   private final ObjectProvider<ClientRegistrationRepository> clientRegistrations;
+  private final GoogleOidcUserService googleUserService;
 
   public SecurityConfig(OAuth2LoginSuccessHandler oAuth2LoginSuccessHandler,
                        FormLoginSuccessHandler formLoginSuccessHandler,
                        CustomUserDetailsService userDetailsService,
-                       ObjectProvider<ClientRegistrationRepository> clientRegistrations) {
+                       ObjectProvider<ClientRegistrationRepository> clientRegistrations,
+                       GoogleOidcUserService googleUserService) {
+    this.googleUserService = googleUserService;
     this.oAuth2LoginSuccessHandler = oAuth2LoginSuccessHandler;
     this.formLoginSuccessHandler = formLoginSuccessHandler;
     this.userDetailsService = userDetailsService;
@@ -62,6 +65,7 @@ public class SecurityConfig extends VaadinWebSecurity {
     if (clientRegistrations.getIfAvailable() != null) {
       http.oauth2Login(oauth2 -> oauth2
           .loginPage(LOGIN_URL)
+          .userInfoEndpoint(userInfo -> userInfo.oidcUserService(googleUserService))
           .successHandler(oAuth2LoginSuccessHandler));
     }
     
