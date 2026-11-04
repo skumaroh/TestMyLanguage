@@ -100,5 +100,46 @@ TestMyLanguage places a learner of Tamil or Hindi at Level 1 in about fifteen mi
 | `facebook/mms-tts-tam`, `facebook/mms-tts-hin` model weights | downloaded when the speech image is built | **CC-BY-NC 4.0** (non-commercial) |
 The Java and front-end dependencies of the application shell (Spring Boot, Vaadin, Azure SDK, PostgreSQL driver) come from the earlier code and are unchanged apart from the build changes above. The only new npm packages are jsPDF, html2canvas and qrcode-generator, and the only new Java library is imageio-webp, listed above.
 
-## Known gaps
-Level 1 only. The Tamil and Hindi answers in the sentence list, and the Tamil and Hindi lines written by Meta for conversations and clips, are checked by the author and still need a native speaker's read. Speech in and out is still being checked with real voices. The MMS voice licence must be reviewed before any commercial use. Meta's MMS voices are single-speaker male voices, so every conversation persona is male; adding female and age-varied voices needs a multi-speaker voice model and is planned after the hackathon.
+## Guest mode
+Switched off unless the deployment sets `GUEST_MODE_ENABLED=true`. A visitor can press "Try it as a guest (to see a sample)" on the login page: one question in each part, no sign-up, and a summary at the end with the way to the full assessment. Code: `guest/` (`GuestAccount`, `GuestMode`, `GuestService`, `GuestThrottle`, `GuestPurgeJob`), `GuestStartView`, `GuestSummaryView`, `GuestStatsView` (admin). A guest is a temporary account with a random address `guest-<random>@guest.invalid` and no personal data; the database function `purge_guest_data` (migration V092, in the database scripts) deletes guest accounts and their answers after 24 hours and can touch no other user. Anonymous statistics (guest started, module finished, summary reached, sign-in clicked; no user id, no address, no IP) are kept in `test_lang_guest_event`. At most 10 guest sessions per visitor per hour; the visitor address is held in memory only.
+
+## Full audio conversation (Module 5)
+An optional "Talk" way through the conversation part, switched by `CONVERSATION_VOICE` (`off`, `admin`, or `on`; default `admin`, so only admins see it until it has been tried more widely). The persona speaks first (Meta's open-source MMS voice), then the microphone turns on by itself; when the learner has spoken and then stays quiet for two seconds, the recording is sent to Muse Voice Transcribe and answered exactly as if the words had been typed (same Muse Spark grading and persona reply, which is then spoken). The microphone is off while the persona speaks. The typed conversation is unchanged and stays the fallback. Code: `voice/AudioConversation`, `voice-conversation.js`, `ConversationBlockView`. Recordings are not stored.
+
+## Known limitations
+What this version does not do, or does only partly. Listed so that nothing here is a surprise.
+
+**Scope**
+- Level 1 only, in two languages (Tamil and Hindi); each language is its own live app with its own database.
+- The result is a placement estimate from one short session. It is not an official qualification, and the certificate says so.
+
+**Language quality**
+- The Tamil and Hindi answers in the sentence list, and the Tamil and Hindi lines Meta wrote for conversations and clips, are checked by the author and still need a native speaker's read.
+- Conversations and clips are drafts until an admin verifies them. There are only a handful per language, so a learner who retakes the assessment will meet repeats.
+- Spoken answers (Muse Voice Transcribe) were not measured on a large set of real Tamil and Hindi learners.
+
+**Voices**
+- The speech service uses Meta's open-source MMS-TTS: one male, single-speaker voice per language, so every conversation persona is male. Female and age-varied voices need a multi-speaker model and are planned.
+- The MMS model weights are licensed CC-BY-NC 4.0 (non-commercial); the licence must be reviewed before any commercial use.
+- MMS-TTS is a research model built to cover over a thousand languages, not a polished product voice. Its Tamil and Hindi speech is intelligible but flat and robotic, and it is weakest on single words read on their own (for example the word tiles in the translation part), because it learned from whole sentences. Meta's Model API has no text-to-speech, so this is the only Meta voice available to the app. Better voices are listed under "Planned next".
+- When the speech service is down, the Listen buttons fall back to the device's own voice, whose Tamil and Hindi quality varies by device and may be missing.
+
+**Handwriting**
+- Writing is scored by a plain shape comparison, not by AI. Letters with very similar shapes can be confused, and the pass rule (a close-enough margin and a 50% pass mark for this part) was tuned on a small sample.
+
+**Pictures, audio and video**
+- Word pictures can be replaced with pictures made by Meta's image model (Muse Image) from an admin page. Pictures not replaced there, and words with a fixed picture address, are earlier images.
+- The word and letter audio, and the reference letter images, are earlier content (see `PRE_EXISTING.md`); they have not been re-recorded or regenerated.
+- Video clips are made outside the Model API (it has no video generation), and the video part needs at least eight verified clips per language to run; without them the assessment has five parts.
+
+**Accounts and operations**
+- Sign-in is by Google (the email is confirmed by Google) or by email and password. Email confirmation of password sign-ups is not switched on yet, so a password account is not checked against a real inbox; the email service needs a paid plan first.
+- Guest mode and the full audio conversation are new and have had little testing on different phones and browsers; guest mode is a switch the deployment turns on, and the audio conversation is shown to admins first.
+- The limit on certificate checks and the live Meta calls are not load-tested; a Meta call can add a few seconds of waiting. Meta's Model API is in public preview, so model names and routes may change.
+
+## Planned next
+- **A better voice.** A more natural, multi-speaker Tamil and Hindi voice (so personas can be female and of different ages): a Meta speech model through the Model API if one becomes available, otherwise a clearly labelled non-Meta voice.
+- **Better single-word audio.** Word audio taken from a naturally spoken sentence, or recorded by a native speaker, instead of the word read on its own.
+- **Native-speaker review** of the Tamil and Hindi sentence answers and of the Meta-written conversation and clip lines, and a larger check of speech-to-text on real learners.
+- **Email confirmation** of new password accounts once an email service plan is in place.
+- **More levels** beyond Level 1, and the full audio conversation for everyone once it has been tried on more devices.
