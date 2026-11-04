@@ -28,9 +28,11 @@ public class LoginView extends VerticalLayout implements BeforeEnterObserver {
 	private static final String OAUTH_URL_MICROSOFT = "/oauth2/authorization/microsoft";
 	private final LoginForm loginForm = new LoginForm();
 	private final Environment env;
+	private final String languageName;
 
-	public LoginView(@Autowired Environment env) {
+	public LoginView(@Autowired Environment env, @Autowired com.infotech.lang.application.config.LanguageContext languageContext) {
 		this.env = env;
+		this.languageName = languageContext.getDisplayName();
 		
 		addClassName("login-view");
 		setSizeFull();
@@ -43,7 +45,7 @@ public class LoginView extends VerticalLayout implements BeforeEnterObserver {
 	}
 
 	private void createLoginLayout() {
-		H2 title = new H2("Language Tool");
+		H2 title = new H2("Let us play a game and check your " + languageName + " language skills now!");
 		
 		// Email/Password Login Form
 		loginForm.setAction("login");
@@ -151,7 +153,7 @@ public class LoginView extends VerticalLayout implements BeforeEnterObserver {
 		if (Boolean.TRUE.equals(env.getProperty("guest.enabled", Boolean.class, false))) {
 			Paragraph guestText = new Paragraph("Just looking?");
 			guestText.getStyle().set("text-align", "center").set("margin", "var(--lumo-space-m) 0 0 0");
-			Button guestButton = new Button("Try it as a guest (one question per part)", e ->
+			Button guestButton = new Button("Try it as a guest (to see a sample)", e ->
 				getUI().ifPresent(ui -> ui.navigate("guest")));
 			guestButton.setWidthFull();
 			loginContainer.add(guestText, guestButton);

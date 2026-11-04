@@ -77,7 +77,7 @@ public class HomeView extends VerticalLayout {
                 : moduleProgress.of(userId);
         boolean returning = progress.hasCompletedBefore() || !progress.finished().isEmpty();
         if (GuestAccount.isGuestNow()) {
-            add(new Paragraph("You're trying the guest version: one question in each part, about two minutes. "
+            add(new Paragraph("You're trying a sample of the assessment (about two minutes). "
                     + "Sign in any time for the full assessment, your own report and a certificate."));
         } else {
             add(new Paragraph(greeting(name, returning)));
@@ -111,25 +111,6 @@ public class HomeView extends VerticalLayout {
                 () -> new WelcomeIntro(securityService, userRepository, proctorTexts, proctorWarmUp, speechRegistry, level)));
         add(start);
 
-        add(new H3("Modules"));
-        VerticalLayout list = new VerticalLayout();
-        list.setPadding(false);
-        list.setSpacing(false);
-        for (Modules module : Modules.taken(videoAvailable)) {
-            boolean done = progress.finished().contains(module.code());
-            if (done) {
-                Span finished = new Span("✓ " + module.heading());
-                finished.getStyle().set("color", "var(--lumo-success-text-color)");
-                list.add(finished);
-            } else if (next.isPresent() && next.get() == module) {
-                list.add(link(module.heading(), module.route()));
-            } else {
-                Span later = new Span(module.heading());
-                later.getStyle().set("color", "var(--lumo-disabled-text-color)");
-                list.add(later);
-            }
-        }
-        add(list);
         if (progress.hasCompletedBefore()) {
             add(new RouterLink("My results", HistoryView.class));
         }
@@ -144,8 +125,10 @@ public class HomeView extends VerticalLayout {
             add(new RouterLink("Admin: translation check (Meta grades meaning)", TranslationCheckView.class));
         }
 
-        Button logout = new Button("Sign out", e -> securityService.logout());
-        add(logout);
+        if (!GuestAccount.isGuestNow()) {
+            Button logout = new Button("Sign out", e -> securityService.logout());
+            add(logout);
+        }
     }
 
     /** "Welcome back, Priya" for someone who has been here before; plain "Welcome" otherwise (and without a name). */

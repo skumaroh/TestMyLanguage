@@ -401,7 +401,7 @@ public class TranslationBlockView extends VerticalLayout {
             String log = (graderFailed ? "FLAG grader unavailable: " : "") + mode + given + " [" + grade.verdict() + "]" + spellingNote;
             int duration = (int) Math.min(Integer.MAX_VALUE, System.currentTimeMillis() - shownAtMillis);
             assessment.recordAnswer(block.getId(), engine.asked() + 1, "sentence:" + current.id(), log, grade.correct(), duration);
-            AdminFeedback.show(grade.correct(), mode + grade.verdict()
+            AnswerFeedback.show(grade.correct(), mode + grade.verdict()
                     + (grade.usedModel() ? " (Meta: " + grade.reason() + ")" : " (exact match)")
                     + (grade.hasSpellingNote() ? " – spelling: " + grade.spelling() + " → " + grade.corrected() : ""));
             engine.record(grade.correct());
