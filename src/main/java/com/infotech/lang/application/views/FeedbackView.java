@@ -76,7 +76,7 @@ public class FeedbackView extends VerticalLayout implements HasUrlParameter<Stri
                 if (r.ok()) {
                     removeAll();
                     add(new H2("Thank you!"), new Paragraph(r.message()),
-                            new Button("Back to the welcome page", x -> getUI().ifPresent(ui -> ui.navigate("welcome"))));
+                            new Button("Back to home", x -> getUI().ifPresent(ui -> ui.navigate(""))));
                     return;
                 }
                 Notification.show(r.message());

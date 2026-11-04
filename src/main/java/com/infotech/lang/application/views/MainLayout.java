@@ -1,5 +1,6 @@
 package com.infotech.lang.application.views;
 
+import com.infotech.lang.application.config.LanguageContext;
 import com.infotech.lang.application.security.SecurityService;
 import com.vaadin.flow.component.applayout.AppLayout;
 import com.vaadin.flow.component.applayout.DrawerToggle;
@@ -15,16 +16,15 @@ public class MainLayout extends AppLayout {
 
     private static final long serialVersionUID = 1L;
 
-    public MainLayout(SecurityService securityService) {
-        H1 title = new H1("TestMyLanguage");
+    public MainLayout(SecurityService securityService, LanguageContext languageContext) {
+        H1 title = new H1(languageContext.getDisplayName() + " lang assessment");
         title.getStyle().set("font-size", "var(--lumo-font-size-l)").set("margin", "0");
         addToNavbar(new DrawerToggle(), title);
 
         VerticalLayout menu = new VerticalLayout();
         menu.setPadding(true);
         menu.add(new RouterLink("Home", HomeView.class));
-        menu.add(new RouterLink("Start the assessment", WelcomeView.class));
-        menu.add(new RouterLink("My results", HistoryView.class));
+                menu.add(new RouterLink("My results", HistoryView.class));
         menu.add(new RouterLink("My profile", ProfileView.class));
         menu.add(new RouterLink("Feedback", FeedbackView.class));
         if (isAdmin()) {

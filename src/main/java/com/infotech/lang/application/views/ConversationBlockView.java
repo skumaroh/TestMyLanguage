@@ -3,6 +3,7 @@ package com.infotech.lang.application.views;
 import com.infotech.lang.application.ai.SpeechToText;
 import com.infotech.lang.application.assessment.AssessBlockResult;
 import com.infotech.lang.application.assessment.AssessmentService;
+import com.infotech.lang.application.assessment.Modules;
 import com.infotech.lang.application.assessment.BlockEngine;
 import com.infotech.lang.application.config.LanguageContext;
 import com.infotech.lang.application.conversation.Conversation;
@@ -164,12 +165,14 @@ public class ConversationBlockView extends VerticalLayout implements BeforeEnter
     private void showConversation() {
         removeAll();
         Conversation c = picked.conversation();
-        add(new H2("Conversation"));
+        add(HelpButton.heading(Modules.CONVERSATION, "You will have a short chat in the language with a made-up person. Read their line, then type your answer.",
+                "Please do not type your real name, address or phone number: use made-up names and details.",
+                "Press Send for each reply. \"Show English\" helps if you are stuck. If you want to stop, press \"I'm done\"."));
         Paragraph note = new Paragraph(nz(c.getSceneNote()).isBlank()
                 ? "Imagine you meet " + c.getPersonaName() + ". Answer in your imagination: use made-up names and details."
                 : c.getSceneNote());
         note.getStyle().set("font-weight", "600");
-        add(note, new Paragraph("Please do not type your real name, address or phone number. If you want to stop, press \"I'm done\"."));
+        add(note);
         transcript = new Div();
         transcript.setWidthFull();
         add(transcript);
@@ -325,7 +328,7 @@ public class ConversationBlockView extends VerticalLayout implements BeforeEnter
         remove(controls);
         Conversation c = picked.conversation();
         transcript.add(bubble(c.getPersonaName() + ": " + c.getClosingLine(), c.getClosingLine(), true));
-        add(new H2("Conversation finished"));
+        add(new H2("Module 5 complete"));
         add(new Paragraph("Thank you. Your answers are saved. Your results will be shown at the end of the assessment."));
         Long attemptId = block.getAttemptId();
         boolean videoNext = false;
@@ -336,8 +339,8 @@ public class ConversationBlockView extends VerticalLayout implements BeforeEnter
         }
         if (videoNext) {
             // the video is the last part: the attempt is completed there
-            add(new Paragraph("The next part is a short video."));
-            add(new Button("Continue to the video", e -> getUI().ifPresent(ui -> ui.navigate("assessment/video"))));
+            add(new Paragraph("Next: " + Modules.VIDEO.heading()));
+            add(new Button("Continue to Module 6", e -> getUI().ifPresent(ui -> ui.navigate(Modules.VIDEO.route()))));
         }
         if (!videoNext || MainLayout.isAdmin()) {
             try {
@@ -350,12 +353,12 @@ public class ConversationBlockView extends VerticalLayout implements BeforeEnter
                 add(new Paragraph("Your answers are saved, but the results could not be prepared right now."));
             }
         }
-        add(new Button("Back to the welcome page", e -> getUI().ifPresent(ui -> ui.navigate("welcome"))));
+        add(new Button("Back to home", e -> getUI().ifPresent(ui -> ui.navigate(""))));
     }
 
     private void showMessage(String text) {
         removeAll();
-        add(new H2("Conversation"), new Paragraph(text));
+        add(new H2(Modules.CONVERSATION.heading()), new Paragraph(text));
     }
 
     private static String nz(String s) {

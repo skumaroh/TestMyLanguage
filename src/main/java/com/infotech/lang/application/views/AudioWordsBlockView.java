@@ -3,6 +3,7 @@ package com.infotech.lang.application.views;
 import com.infotech.lang.application.assessment.AssessBlockResult;
 import com.infotech.lang.application.assessment.AssessmentMediaService;
 import com.infotech.lang.application.assessment.AssessmentService;
+import com.infotech.lang.application.assessment.Modules;
 import com.infotech.lang.application.assessment.BlockEngine;
 import com.infotech.lang.application.assessment.MediaUrls;
 import com.infotech.lang.application.assessment.WordQuestion;
@@ -94,8 +95,8 @@ public class AudioWordsBlockView extends VerticalLayout {
         built.setLength(0);
         shownAtMillis = System.currentTimeMillis();
 
-        add(new H2("Audio words"), new H3("Question " + (engine.asked() + 1)),
-                new Paragraph("Listen to the word, then build it with the letters."));
+        add(HelpButton.heading(Modules.AUDIO_WORDS, "Listen to the word, then build it with the letter tiles in the right order.",
+                "You can listen again as often as you like. Tap Clear to start again, and Check when you are ready."), new H3("Question " + (engine.asked() + 1)));
         String audioSrc = MediaUrls.proxyUrl("audio", current.audioUrl());
         if (audioSrc != null) {
             Button listen = new Button("Listen to the word");
@@ -170,15 +171,16 @@ public class AudioWordsBlockView extends VerticalLayout {
 
     private void showDone() {
         removeAll();
-        add(new H2("Audio words finished"));
+        add(new H2("Module 3 complete"));
         add(new Paragraph("Thank you. Your answers are saved. Your results will be shown at the end of the assessment."));
-        add(new Button("Continue to the translation", e -> getUI().ifPresent(ui -> ui.navigate("assessment/translation"))));
-        add(new Button("Back to the welcome page", e -> getUI().ifPresent(ui -> ui.navigate("welcome"))));
+        add(new Paragraph("Next: " + Modules.TRANSLATION.heading()));
+        add(new Button("Continue to Module 4", e -> getUI().ifPresent(ui -> ui.navigate(Modules.TRANSLATION.route()))));
+        add(new Button("Back to home", e -> getUI().ifPresent(ui -> ui.navigate(""))));
     }
 
     private void showMessage(String text) {
         removeAll();
-        add(new H2("Audio words"), new Paragraph(text));
+        add(new H2(Modules.AUDIO_WORDS.heading()), new Paragraph(text));
     }
 
     private static UUID userIdOf(SecurityService securityService, UserRepository userRepository) {

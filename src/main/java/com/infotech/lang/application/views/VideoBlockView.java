@@ -4,6 +4,7 @@ import com.infotech.lang.application.ai.SpeechToText;
 import com.infotech.lang.application.assessment.AssessBlockResult;
 import com.infotech.lang.application.assessment.AssessmentMediaService;
 import com.infotech.lang.application.assessment.AssessmentService;
+import com.infotech.lang.application.assessment.Modules;
 import com.infotech.lang.application.assessment.BlockEngine;
 import com.infotech.lang.application.assessment.MediaUrls;
 import com.infotech.lang.application.config.LanguageContext;
@@ -125,8 +126,8 @@ public class VideoBlockView extends VerticalLayout implements BeforeEnterObserve
         current = clips.get(engine.asked());
         shownAtMillis = System.currentTimeMillis();
         String name = "hindi".equalsIgnoreCase(language) ? "Hindi" : "Tamil";
-        add(new H2("Video"), new H3("Clip " + (engine.asked() + 1)),
-                new Paragraph("Watch, then say or write in " + name + " what is happening. You can watch again."));
+        add(HelpButton.heading(Modules.VIDEO, "Watch the short clip, then say or write in " + name + " what is happening.",
+                "You can watch again as often as you like. Press Submit when you are ready."), new H3("Clip " + (engine.asked() + 1)));
         String url = MediaUrls.forBlob("video", AssessmentMediaService.VIDEO_CONTAINER, current.getBlobName());
         if (current.isVideo()) {
             add(new Html("<video src=\"" + url + "\" autoplay muted loop playsinline controls style=\"max-width:420px;width:100%;"
@@ -183,7 +184,7 @@ public class VideoBlockView extends VerticalLayout implements BeforeEnterObserve
     private void finishBlock() {
         assessment.finishBlock(block.getId(), engine.asked(), engine.correct(), engine.passed());
         removeAll();
-        add(new H2("Video finished"));
+        add(new H2("Module 6 complete"));
         add(new Paragraph("Thank you. Your answers are saved."));
         Long attemptId = block.getAttemptId();
         try {
@@ -194,12 +195,12 @@ public class VideoBlockView extends VerticalLayout implements BeforeEnterObserve
             logger.error("Could not complete the attempt", e);
             add(new Paragraph("Your answers are saved, but the results could not be prepared right now."));
         }
-        add(new Button("Back to the welcome page", e -> getUI().ifPresent(ui -> ui.navigate("welcome"))));
+        add(new Button("Back to home", e -> getUI().ifPresent(ui -> ui.navigate(""))));
     }
 
     private void showMessage(String text) {
         removeAll();
-        add(new H2("Video"), new Paragraph(text));
+        add(new H2(Modules.VIDEO.heading()), new Paragraph(text));
     }
 
     private UUID userIdOf() {

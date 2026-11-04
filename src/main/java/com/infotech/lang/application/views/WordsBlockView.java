@@ -3,6 +3,7 @@ package com.infotech.lang.application.views;
 import com.infotech.lang.application.assessment.AssessBlockResult;
 import com.infotech.lang.application.assessment.AssessmentMediaService;
 import com.infotech.lang.application.assessment.AssessmentService;
+import com.infotech.lang.application.assessment.Modules;
 import com.infotech.lang.application.assessment.BlockEngine;
 import com.infotech.lang.application.assessment.MediaUrls;
 import com.infotech.lang.application.assessment.WordQuestion;
@@ -95,7 +96,7 @@ public class WordsBlockView extends VerticalLayout {
         built.setLength(0);
         shownAtMillis = System.currentTimeMillis();
 
-        add(new H2("Words"), new H3("Question " + (engine.asked() + 1)));
+        add(HelpButton.heading(Modules.WORDS, "Look at the picture and listen to the word if you like.", "Build the word by tapping the letter tiles in the right order. Tap Clear to start the word again, and Check when you are ready."), new H3("Question " + (engine.asked() + 1)));
         if (current.prompt() != null && !current.prompt().isBlank()) {
             add(new Paragraph(current.prompt()));
         }
@@ -185,15 +186,16 @@ public class WordsBlockView extends VerticalLayout {
 
     private void showDone() {
         removeAll();
-        add(new H2("Words finished"));
+        add(new H2("Module 1 complete"));
         add(new Paragraph("Thank you. Your answers are saved. Your results will be shown at the end of the assessment."));
-        add(new Button("Continue to the letters", e -> getUI().ifPresent(ui -> ui.navigate("assessment/letters"))));
-        add(new Button("Back to the welcome page", e -> getUI().ifPresent(ui -> ui.navigate("welcome"))));
+        add(new Paragraph("Next: " + Modules.DRAW_LETTERS.heading()));
+        add(new Button("Continue to Module 2", e -> getUI().ifPresent(ui -> ui.navigate(Modules.DRAW_LETTERS.route()))));
+        add(new Button("Back to home", e -> getUI().ifPresent(ui -> ui.navigate(""))));
     }
 
     private void showMessage(String text) {
         removeAll();
-        add(new H2("Words"), new Paragraph(text));
+        add(new H2(Modules.WORDS.heading()), new Paragraph(text));
     }
 
     private static UUID userIdOf(SecurityService securityService, UserRepository userRepository) {
